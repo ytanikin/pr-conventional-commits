@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: PR Conventional Commit Validation
-        uses:  ytanikin/PRConventionalCommits@1.1.0
+        uses:  ytanikin/pr-conventional-commits@1.1.0
         with:
           task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
           add_label: 'false'
@@ -97,7 +97,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: PR Conventional Commit Validation
-        uses:  ytanikin/PRConventionalCommits@1.1.0
+        uses:  ytanikin/pr-conventional-commits@1.1.0
         with:
          task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
          add_label: 'false'
@@ -124,7 +124,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: PR Conventional Commit Validation
-        uses:  ytanikin/PRConventionalCommits@1.1.0
+        uses:  ytanikin/pr-conventional-commits@1.1.0
         with:
           task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
 ```
@@ -149,7 +149,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: PR Conventional Commit Validation
-        uses:  ytanikin/PRConventionalCommits@1.1.0
+        uses:  ytanikin/pr-conventional-commits@1.1.0
         with:
          task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
          ticket_key_regex: '^PROJECT-\\d{2,5}$'
@@ -182,4 +182,4 @@ You can verify your changes by editing the title of your PR. The PR uses an acti
 
 ## 🤝 Contributing
 
-Contributions, issues and feature requests are welcome!<br />Feel free to check [issues page](https://github.com/ytanikin/PRConventionalCommits/issues).
+Contributions, issues and feature requests are welcome!<br />Feel free to check [issues page](https://github.com/ytanikin/pr-conventional-commits/issues).
