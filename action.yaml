@@ -12,6 +12,14 @@ inputs:
     description: 'Whether to add labels'
     required: false
     default: 'true'
+  add_scope_label:
+    description: 'Whether to add scope labels, such login for the title "fix(login): fix message in login page'
+    required: false
+    default: 'false'
+  scope_custom_labels:
+    description: 'A JSON string mapping task types to custom scope label names'
+    required: false
+    default: '{}'
   token:
     description: 'GitHub token for applying labels.'
     required: false

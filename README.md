@@ -19,8 +19,7 @@ This GitHub Action checks that the PR title adheres to the [Conventional Commits
 - **Simple Navigation through Git History**: Conventional commits make it easy to identify the nature of changes (fix, feat, chore, etc.) when searching through the git commit history.
 - **Compatibility with Semantic Versioning (SemVer)**: Conventional Commits provides a structured format for commit messages, which aligns with SemVer and helps understand version changes without reading the code.
 - **Labeling PRs**: By labeling PRs based on the task type, it provides a visual indication of the nature of changes and helps in organizing and prioritizing PR reviews. 
-- Adding a `!` in the PR title will automatically assign the breaking change label to the PR.
-
+- **Filtering by labels**: You can filter out specific labels in GitHub Pull Requests UI
 ### Inputs
 
 - `task_types` (required): An array of task types. Example: `["feat","fix","docs","test","ci","refactor","perf","chore","revert"]`.

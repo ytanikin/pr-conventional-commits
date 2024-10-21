@@ -37,3 +37,8 @@ jobs:
               "revert": "revert", 
               "wip": "WIP"
             }'
+          add_scope_label: 'true' # false by default
+          scope_custom_labels: '{
+              "login": "@login team",
+              "dashboard": "dashboard scope"
+            }'

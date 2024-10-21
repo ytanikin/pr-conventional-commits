@@ -139,7 +139,7 @@ describe('applyLabel', () => {
         getOctokit.mockReturnValue(mockOctokit);
 
         // Directly call the updateLabels function
-        await myModule.updateLabels(pr, commitDetail, customLabels);
+        await myModule.updateLabels(pr, commitDetail, customLabels, "feat", "custom_labels");
 
         // Assert removeLabel was called for 'feat' and 'breaking change'
         expect(mockOctokit.rest.issues.removeLabel).toHaveBeenCalledWith({
