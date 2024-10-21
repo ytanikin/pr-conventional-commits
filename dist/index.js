@@ -4,16 +4,17 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /***/ 2932:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const { getInput, setFailed } = __nccwpck_require__(2186);
-const { getOctokit, context } = __nccwpck_require__(5438);
+const {getInput, setFailed} = __nccwpck_require__(2186);
+const {getOctokit, context} = __nccwpck_require__(5438);
 const parser = __nccwpck_require__(1655)
 
 
-const customLabelType = 'scope_custom_labels';
+const scopeCustomLabelType = 'scope_custom_labels';
+const typeCustomLabelType = 'custom_labels';
 
 function getScopeCustomLabels() {
     let customLabelKeys = []
-    const customLabelsInput = JSON.parse(getInput(customLabelType));
+    const customLabelsInput = JSON.parse(getInput(scopeCustomLabelType));
     if (customLabelsInput !== undefined) {
         customLabelKeys = Object.keys(customLabelsInput);
     }
@@ -27,12 +28,12 @@ async function run() {
     const commitDetail = await checkConventionalCommits();
     await checkTicketNumber(commitDetail);
     const pr = context.payload.pull_request;
-    await applyLabel(pr, commitDetail, commitDetail.type, 'custom_labels', commitDetail.breaking, JSON.parse(getInput('task_types')));
+    await applyLabel(pr, commitDetail, commitDetail.type, typeCustomLabelType, commitDetail.breaking, JSON.parse(getInput('task_types')));
     const addLabel = getInput('add_scope_label');
     if (addLabel !== undefined && addLabel.toLowerCase() === 'false') {
         return;
     }
-    await applyLabel(pr, commitDetail, commitDetail.scope, customLabelType, commitDetail.breaking, getScopeCustomLabels());
+    await applyLabel(pr, commitDetail, commitDetail.scope, scopeCustomLabelType, commitDetail.breaking, getScopeCustomLabels());
 }
 
 
@@ -57,8 +58,8 @@ async function checkConventionalCommits() {
 
     const pr = context.payload.pull_request;
     const titleAst = parser.sync(pr.title.trimStart(), {
-        headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$/,
-        breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!: (.*)$/
+        headerPattern: /^(\w*)(?:\(([\w$.\-/ ])\))?!?: (.*)$/,
+        breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-/ ])\))?!: (.*)$/
     });
     const cc = {
         type: titleAst.type ? titleAst.type : '',
@@ -86,15 +87,16 @@ async function checkTicketNumber() {
         }
     }
 }
+
 /**
  * Apply labels to the pull request based on the details of the commit and any custom labels provided.
  * @param {Object} pr The pull request object.
  * @param {Object} commitDetail The object with details of the commit.
  * @param labelName
- * @param customLabelType
+ * @param labelType
  * @param breaking
  */
-async function applyLabel(pr, commitDetail, labelName, customLabelType, breaking, taskTypesDefinedInInput) {
+async function applyLabel(pr, commitDetail, labelName, labelType, breaking, taskTypesDefinedInInput) {
     const addLabel = getInput('add_label');
     if (addLabel !== undefined && addLabel.toLowerCase() === 'false') {
         return;
@@ -102,7 +104,7 @@ async function applyLabel(pr, commitDetail, labelName, customLabelType, breaking
     if (labelName === undefined) {
         return;
     }
-    const customLabelsInput = getInput(customLabelType);
+    const customLabelsInput = getInput(labelType);
     let customLabels = {};
     if (customLabelsInput) {
         try {
@@ -117,13 +119,13 @@ async function applyLabel(pr, commitDetail, labelName, customLabelType, breaking
             return;
         }
     }
-    await updateLabels(pr, commitDetail, customLabels, labelName, breaking, taskTypesDefinedInInput);
+    await updateLabels(pr, commitDetail, customLabels, labelName, breaking, taskTypesDefinedInInput, labelType);
 }
 
 /**
  * Update labels on the pull request.
  */
-async function updateLabels(pr, commitDetail, customLabels, labelName, breaking, expectedTaskTypes) {
+async function updateLabels(pr, commitDetail, customLabels, labelName, breaking, expectedTaskTypes, labelType) {
     const token = getInput('token');
     const octokit = getOctokit(token);
     const currentLabelsResult = await octokit.rest.issues.listLabelsOnIssue({
@@ -145,14 +147,16 @@ async function updateLabels(pr, commitDetail, customLabels, labelName, breaking,
         newLabels.push(breakingChangeLabel);
     }
     // Determine labels to remove and remove them
-    const labelsToRemove = currentLabels.filter(label => managedLabels.includes(label) && !newLabels.includes(label));
-    for (let label of labelsToRemove) {
-        await octokit.rest.issues.removeLabel({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: pr.number,
-            name: label
-        });
+    if (labelType === scopeCustomLabelType) {
+        const labelsToRemove = currentLabels.filter(label => managedLabels.includes(label) && !newLabels.includes(label));
+        for (let label of labelsToRemove) {
+            await octokit.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                name: label
+            });
+        }
     }
     // Ensure new labels exist with the desired color and add them
     for (let label of newLabels) {
