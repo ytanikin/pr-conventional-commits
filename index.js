@@ -147,6 +147,7 @@ async function getPreviousTitle(pr) {
     } catch (error) {
     }
 }
+
 async function applyScopeLabel(pr, scopeName) {
     const addLabelEnabled = getInput('add_scope_label');
     if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined) {
