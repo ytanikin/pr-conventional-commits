@@ -24,9 +24,6 @@ async function run() {
     const pr = context.payload.pull_request;
     await applyTaskTypeLabel(pr, commitDetail, commitDetail.type, typeCustomLabelType, commitDetail.breaking, JSON.parse(getInput('task_types')));
     const addLabel = getInput('add_scope_label');
-    if (addLabel !== undefined && addLabel.toLowerCase() === 'false') {
-        return;
-    }
     console.log('adding labels for scope' + addLabel)
     await applyScopeLabel(pr, commitDetail, commitDetail.scope);
 }
@@ -151,8 +148,8 @@ async function getPreviousTitle(pr) {
     }
 }
 async function applyScopeLabel(pr, scopeName) {
-    const addLabel = getInput('scope_label_prefix');
-    if (addLabel !== undefined && addLabel.toLowerCase() === 'false' || scopeName === undefined) {
+    const addLabelEnabled = getInput('add_scope_label');
+    if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined) {
         return;
     }
 
@@ -165,7 +162,8 @@ async function applyScopeLabel(pr, scopeName) {
         return;
     }
     removeLabel(octokit, pr, cc.scope)
-    createOrAddLabel(octokit, scopeName, pr)
+    prefix = getInput('scope_label_prefix')
+    createOrAddLabel(octokit, prefix + scopeName, pr)
 }
 
 async function getCurrentLabelsResult(octokit, pr) {
