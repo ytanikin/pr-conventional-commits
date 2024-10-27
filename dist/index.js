@@ -156,7 +156,7 @@ async function applyScopeLabel(pr, commitDetail) {
     const currentLabels = currentLabelsResult.data.map(label => label.name);
     const newLabel = prefix + scopeName;
     console.log("current labels " + JSON.stringify(currentLabels))
-    if (currentLabels.contains(newLabel)) {
+    if (currentLabels.includes(newLabel)) {
         return;
     }
     const prevTitle = getPreviousTitle(pr)
