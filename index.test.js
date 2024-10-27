@@ -6,6 +6,7 @@ jest.mock('@actions/core');
 jest.mock('@actions/github');
 
 const myModule = require('./index');
+const utils = require('./utils');
 
 beforeEach(() => {
     jest.resetAllMocks();
@@ -139,7 +140,7 @@ describe('applyLabel', () => {
         getOctokit.mockReturnValue(mockOctokit);
 
         // Directly call the updateLabels function
-        await myModule.updateLabels(pr, commitDetail, customLabels);
+        await myModule.updateLabels(pr, commitDetail, customLabels, "feat", "custom_labels");
 
         // Assert removeLabel was called for 'feat' and 'breaking change'
         expect(mockOctokit.rest.issues.removeLabel).toHaveBeenCalledWith({
@@ -159,13 +160,19 @@ describe('applyLabel', () => {
 
 describe('generateColor', () => {
     it('should return a string', () => {
-        expect(typeof myModule.generateColor('test')).toBe('string');
+        expect(typeof utils.generateColor('test')).toBe('string');
     });
 
     it('should generate different colors for different inputs', () => {
-        const color1 = myModule.generateColor('test1');
-        const color2 = myModule.generateColor('test2');
+        const color1 = utils.generateColor('test1');
+        const color2 = utils.generateColor('test2');
         expect(color1).not.toEqual(color2);
+    });
+    
+    it('should generate the same colors for different inputs', () => {
+        const color1 = utils.generateColor('test1');
+        const color2 = utils.generateColor('test1');
+        expect(color1).toEqual(color2);
     });
 
 });

@@ -12,14 +12,16 @@ Conventional Commits is a lightweight convention on top of commit messages. It p
 
 This GitHub Action checks that the PR title adheres to the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification. If the PR title contains a valid task type and optionally a task number, it labels the PR based on the task type.
 
-### Why Conventional Commits?
+### Why PR Conventional Commits?
 
 - **Automatic Generation of CHANGELOGs**: With Conventional Commits, CHANGELOGs can be automatically generated, making it easier for users to find what's changed between releases.
 - **Explicitly Communicate Nature of Changes**: Conventional commits establish a clear guideline, making it easier for people to contribute to your projects.
 - **Simple Navigation through Git History**: Conventional commits make it easy to identify the nature of changes (fix, feat, chore, etc.) when searching through the git commit history.
 - **Compatibility with Semantic Versioning (SemVer)**: Conventional Commits provides a structured format for commit messages, which aligns with SemVer and helps understand version changes without reading the code.
-- **Labeling PRs**: By labeling PRs based on the task type, it provides a visual indication of the nature of changes and helps in organizing and prioritizing PR reviews. 
-- Adding a `!` in the PR title will automatically assign the breaking change label to the PR.
+- **Labeling PRs**: By labeling PRs based on the task type, it provides a visual indication of the nature of changes and helps in organizing and prioritizing PR reviews.
+- **Breaking Change**: Adding a `!` in the PR title will automatically assign the breaking change label to the PR.
+- **Filtering by labels**: You can filter out specific labels in GitHub Pull Requests UI
+
 
 ### Inputs
 
@@ -36,7 +38,7 @@ By default, this action adds labels based on the task type. For example, a pull 
 Adding a `!` in the PR title will automatically assign the breaking change label to the PR.
 
 If you prefer not to add labels, you can disable the labeling functionality by setting the `add_label` input to `'false'`. In such cases, the action will still validate the PR title against the Conventional Commits specification but will not add any labels.
-![img.png](pull_requests.png)
+![img.png](labels.png)
 
 ### Configuring Squash Merging
 
@@ -51,6 +53,7 @@ Make sure that at least one merge option is enabled (merge commits, squashing, o
 
 When using the squash merge option, all commits from the head branch will be combined into a single commit in the base branch. The default commit message presented when merging a pull request with squash will be the PR title.
 
+![squash_config.png](squash_config.png)
 ## Examples
 
 ### Basic Usage, no label, no ticket numbers validation
