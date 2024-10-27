@@ -106,7 +106,7 @@ async function getPreviousTitle(pr) {
         const previousTitleEvent = events
             .filter(event => event.event === 'edited' && event.changes && event.changes.title)
             .pop();
-        console.log("events " + JSON.stringify(previousTitleEvent))
+        console.log("events " + JSON.stringify(events))
         console.log("Pretitievent " + JSON.stringify(previousTitleEvent))
         if (previousTitleEvent) {
             return previousTitleEvent.changes.title.from
