@@ -102,6 +102,16 @@ async function applyLabel(pr, commitDetail) {
 async function getPreviousTitle(pr) {
     try {
         const octokit = getOctokit(getInput('token'));
+
+        const { data: prData } = await octokit.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: pr.number,
+        });
+        console.log("data " + JSON.stringify(data))
+        console.log("prData " + JSON.stringify(prData))
+        console.log("Current Title:", prData.title);
+        
         const {data: events} = await octokit.rest.issues.listEventsForTimeline({
             owner: context.repo.owner,
             repo: context.repo.repo,
