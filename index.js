@@ -33,18 +33,11 @@ function parseConventionalCommit(pr) {
  * @returns {Promise<Object>} An object with details of the commit: type, scope and whether it's a breaking change.
  */
 async function checkConventionalCommits() {
-    let taskTypesInput = getInput('task_types');
-    if (!taskTypesInput) {
-        setFailed('Missing required input: task_types');
+    const taskTypeList = getTaskTypes();
+    if (taskTypeList === null) {
         return;
     }
-    let taskTypeList;
-    try {
-        taskTypeList = JSON.parse(taskTypesInput);
-    } catch (err) {
-        setFailed('Invalid task_types input. Expecting a JSON array.');
-        return;
-    }
+
     const pr = context.payload.pull_request;
     const cc = parseConventionalCommit(pr);
     if (!cc.type || !taskTypeList.includes(cc.type)) {
@@ -52,6 +45,25 @@ async function checkConventionalCommits() {
         return;
     }
     return cc;
+}
+
+function getTaskTypes() {
+    const taskTypesInput = getInput('task_types');
+    if (!taskTypesInput) {
+        setFailed('Missing required input: task_types');
+        return null;
+    }
+
+    try {
+        const taskTypeList = JSON.parse(taskTypesInput);
+        if (!Array.isArray(taskTypeList)) {
+            throw new Error('Invalid format'); // Ensure the parsed result is an array
+        }
+        return taskTypeList;
+    } catch (err) {
+        setFailed('Invalid task_types input. Expecting a JSON array.');
+        return null;
+    }
 }
 
 
@@ -125,7 +137,7 @@ function extractConventionalCommitData(title) {
 async function applyScopeLabel(pr, commitDetail) {
     const addLabelEnabled = getInput('add_scope_label');
     scopeName = commitDetail.scope;
-    if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined) {
+    if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined || scopeName === "") {
         return;
     }
     console.log("scope name " + scopeName)
