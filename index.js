@@ -31,7 +31,7 @@ async function run() {
     await applyTaskTypeLabel(pr, commitDetail, commitDetail.type, typeCustomLabelType, commitDetail.breaking, JSON.parse(getInput('task_types')));
     const addLabel = getInput('add_scope_label');
     console.log('adding labels for scope' + addLabel)
-    await applyScopeLabel(pr, commitDetail, commitDetail.scope);
+    // await applyScopeLabel(pr, commitDetail, commitDetail.scope);
 
 }
 
