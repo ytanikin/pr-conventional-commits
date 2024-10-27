@@ -7,62 +7,67 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 const { getInput, setFailed } = __nccwpck_require__(2186);
 const { getOctokit, context } = __nccwpck_require__(5438);
 
-const githubApi = {
-    async getCurrentLabelsResult(octokit, pr) {
-        return await octokit.rest.issues.listLabelsOnIssue({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: pr.number
-        });
-    },
+async function getCurrentLabelsResult(octokit, pr) {
+    return await octokit.rest.issues.listLabelsOnIssue({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number
+    });
+}
 
-    async removeLabel(octokit, pr, label) {
-        await octokit.rest.issues.removeLabel({
+async function removeLabel(octokit, pr, label) {
+    await octokit.rest.issues.removeLabel({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number,
+        name: label
+    });
+}
+
+async function createLabel(octokit, label, color) {
+    await octokit.rest.issues.createLabel({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        name: label,
+        color: color
+    });
+}
+
+async function createOrAddLabel(octokit, label, pr) {
+    try {
+        await octokit.rest.issues.getLabel({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            issue_number: pr.number,
             name: label
         });
-    },
-
-    async createLabel(octokit, label, color) {
-        await octokit.rest.issues.createLabel({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            name: label,
-            color: color
-        });
-    },
-
-    async createOrAddLabel(octokit, label, pr) {
-        try {
-            await octokit.rest.issues.getLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: label
-            });
-        } catch (err) {
-            let color = generateColor(label);
-            await this.createLabel(octokit, label, color);
-        }
-        await octokit.rest.issues.addLabels({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: pr.number,
-            labels: [label]
-        });
-    },
-
-    async getCurrentLabels(octokit, pr) {
-        return await octokit.rest.issues.listLabelsOnIssue({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: pr.number
-        });
+    } catch (err) {
+        // Label does not exist, create it
+        let color = generateColor(label);
+        await createLabel(octokit, label, color);
     }
-};
+    await octokit.rest.issues.addLabels({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number,
+        labels: [label],
+    });
+}
 
-module.exports = githubApi;
+async function getCurrentLabels(octokit, pr) {
+    const currentLabelsResult = await octokit.rest.issues.listLabelsOnIssue({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number
+    });
+    return currentLabelsResult;
+}
+module.exports = {
+    getCurrentLabelsResult,
+    removeLabel,
+    createLabel,
+    createOrAddLabel,
+    getCurrentLabels
+};
 
 
 /***/ }),
@@ -235,23 +240,6 @@ async function updateLabels(pr, cc, customLabels) {
     }
 }
 
-/**
- * Generates a color based on the string input.
- */
-function generateColor(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-
-    let color = '';
-    for (let i = 0; i < 3; i++) {
-        let value = (hash >> (i * 8)) & 0xFF;
-        color += ('00' + value.toString(16)).substr(-2);
-    }
-
-    return color;
-}
 
 run().catch(err => setFailed(err.message));
 
