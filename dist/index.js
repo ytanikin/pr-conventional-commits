@@ -1,13 +1,84 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 5740:
+/***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
+
+"use strict";
+__nccwpck_require__.r(__webpack_exports__);
+/* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
+/* harmony export */   "createLabel": () => (/* binding */ createLabel),
+/* harmony export */   "createOrAddLabel": () => (/* binding */ createOrAddLabel),
+/* harmony export */   "getCurrentLabels": () => (/* binding */ getCurrentLabels),
+/* harmony export */   "getCurrentLabelsResult": () => (/* binding */ getCurrentLabelsResult),
+/* harmony export */   "removeLabel": () => (/* binding */ removeLabel)
+/* harmony export */ });
+
+async function getCurrentLabelsResult(octokit, pr) {
+    return await octokit.rest.issues.listLabelsOnIssue({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number
+    });
+}
+
+async function removeLabel(octokit, pr, label) {
+    await octokit.rest.issues.removeLabel({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number,
+        name: label
+    });
+}
+
+async function createLabel(octokit, label, color) {
+    await octokit.rest.issues.createLabel({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        name: label,
+        color: color
+    });
+}
+
+async function createOrAddLabel(octokit, label, pr) {
+    try {
+        await octokit.rest.issues.getLabel({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            name: label
+        });
+    } catch (err) {
+        // Label does not exist, create it
+        let color = generateColor(label);
+        await createLabel(octokit, label, color);
+    }
+    await octokit.rest.issues.addLabels({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number,
+        labels: [label],
+    });
+}
+
+async function getCurrentLabels(octokit, pr) {
+    const currentLabelsResult = await octokit.rest.issues.listLabelsOnIssue({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number
+    });
+    return currentLabelsResult;
+}
+
+
+/***/ }),
+
 /***/ 2932:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const { getInput, setFailed } = __nccwpck_require__(2186);
 const { getOctokit, context } = __nccwpck_require__(5438);
 const parser = __nccwpck_require__(1655)
-
+const githubApi = __nccwpck_require__(5740);
 
 /**
  * Main function to run the whole process.
@@ -99,31 +170,6 @@ async function applyLabel(pr, commitDetail) {
     await updateLabels(pr, commitDetail, customLabels);
 }
 
-async function getPreviousTitle(pr) {
-    try {
-        const octokit = getOctokit(getInput('token'));
-
-        const {data: events} = await octokit.rest.issues.listEventsForTimeline({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: pr.number,
-        });
-        console.log("events " + JSON.stringify(events))
-        // Find the most recent title change event before the current one
-        const previousTitleEvent = events.reverse.find(event => event.event === 'renamed' && event.rename && event.rename.from);
-        console.log("Pretitievent " + JSON.stringify(previousTitleEvent))
-        if (previousTitleEvent) {
-            return previousTitleEvent.rename.from
-        } else {
-            console.log('No previous title found.');
-        }
-
-    } catch (error) {
-        console.log("error " + JSON.stringify(error))
-        return undefined
-    }
-}
-
 function extractConventionalCommitData(title) {
     const titleAst = parser.sync(title.trimStart(), {
         headerPattern: /^(\w*)(?:\(([\w$.\-/ ])\))?!?: (.*)$/,
@@ -147,7 +193,7 @@ async function applyScopeLabel(pr, commitDetail) {
 
     prefix = getInput('scope_label_prefix')
     const octokit = getOctokit(getInput('token'));
-    const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
+    const currentLabelsResult = await githubApi.getCurrentLabelsResult(octokit, pr);
     const currentLabels = currentLabelsResult.data.map(label => label.name);
     const newLabel = prefix + scopeName;
     // console.log("current labels " + JSON.stringify(currentLabels))
@@ -174,62 +220,7 @@ async function applyScopeLabel(pr, commitDetail) {
     //         await removeLabel(octokit, pr, prefix + cc.scope);
     //     }
     // }
-    createOrAddLabel(octokit, newLabel, pr)
-}
-
-async function getCurrentLabelsResult(octokit, pr) {
-    return await octokit.rest.issues.listLabelsOnIssue({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: pr.number
-    });
-}
-
-async function removeLabel(octokit, pr, label) {
-    await octokit.rest.issues.removeLabel({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: pr.number,
-        name: label
-    });
-}
-
-async function createLabel(octokit, label, color) {
-    await octokit.rest.issues.createLabel({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        name: label,
-        color: color
-    });
-}
-
-async function createOrAddLabel(octokit, label, pr) {
-    try {
-        await octokit.rest.issues.getLabel({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            name: label
-        });
-    } catch (err) {
-        // Label does not exist, create it
-        let color = generateColor(label);
-        await createLabel(octokit, label, color);
-    }
-    await octokit.rest.issues.addLabels({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: pr.number,
-        labels: [label],
-    });
-}
-
-async function getCurrentLabels(octokit, pr) {
-    const currentLabelsResult = await octokit.rest.issues.listLabelsOnIssue({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: pr.number
-    });
-    return currentLabelsResult;
+    githubApi.createOrAddLabel(octokit, newLabel, pr)
 }
 
 /**
@@ -238,7 +229,7 @@ async function getCurrentLabels(octokit, pr) {
 async function updateLabels(pr, cc, customLabels) {
     const token = getInput('token');
     const octokit = getOctokit(token);
-    const currentLabelsResult = await getCurrentLabels(octokit, pr);
+    const currentLabelsResult = await githubApi.getCurrentLabels(octokit, pr);
     const currentLabels = currentLabelsResult.data.map(label => label.name);
     let taskTypesInput = getInput('task_types');
     let taskTypeList = JSON.parse(taskTypesInput);
@@ -257,12 +248,12 @@ async function updateLabels(pr, cc, customLabels) {
     // Determine labels to remove and remove them
     const labelsToRemove = currentLabels.filter(label => managedLabels.includes(label) && !newLabels.includes(label));
     for (let label of labelsToRemove) {
-        await removeLabel(octokit, pr, label)
+        await githubApi.removeLabel(octokit, pr, label)
     }
     // Ensure new labels exist with the desired color and add them
     for (let label of newLabels) {
         if (!currentLabels.includes(label)) {
-            await createOrAddLabel(octokit, label, pr)
+            await githubApi.createOrAddLabel(octokit, label, pr)
         }
     }
 }
@@ -31303,6 +31294,34 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__nccwpck_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__nccwpck_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/node module decorator */
 /******/ 	(() => {
 /******/ 		__nccwpck_require__.nmd = (module) => {
