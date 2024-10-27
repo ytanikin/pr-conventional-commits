@@ -10,7 +10,7 @@ async function run() {
     const commitDetail = await checkConventionalCommits();
     await checkTicketNumber(commitDetail);
     const pr = context.payload.pull_request;
-    // await applyLabel(pr, commitDetail);
+    await applyLabel(pr, commitDetail);
     await applyScopeLabel(pr, commitDetail)
 }
 
@@ -33,17 +33,9 @@ async function checkConventionalCommits() {
         setFailed('Invalid task_types input. Expecting a JSON array.');
         return;
     }
-
     const pr = context.payload.pull_request;
-    const titleAst = parser.sync(pr.title.trimStart(), {
-        headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$/,
-        breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!: (.*)$/
-    });
-    const cc = {
-        type: titleAst.type ? titleAst.type : '',
-        scope: titleAst.scope ? titleAst.scope : '',
-        breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
-    };
+    const cc = extractConventionalCommitData(pr.title);
+    console.log("cc " + cc.type + " " + cc.toString())
     if (!cc.type || !taskTypeList.includes(cc.type)) {
         setFailed(`Invalid or missing task type: '${cc.type}'. Must be one of: ${taskTypeList.join(', ')}`);
         return;
@@ -92,6 +84,7 @@ async function applyLabel(pr, commitDetail) {
     }
     await updateLabels(pr, commitDetail, customLabels);
 }
+
 async function getPreviousTitle(pr) {
     try {
         const octokit = getOctokit(getInput('token'));
@@ -121,6 +114,20 @@ async function getPreviousTitle(pr) {
     } catch (error) {
     }
 }
+
+function extractConventionalCommitData(title) {
+    const titleAst = parser.sync(title.trimStart(), {
+        headerPattern: /^(\w*)(?:\(([\w$.\-/ ])\))?!?: (.*)$/,
+        breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-/ ])\))?!: (.*)$/
+    });
+    const cc = {
+        type: titleAst.type ? titleAst.type : '',
+        scope: titleAst.scope ? titleAst.scope : '',
+        breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
+    };
+    return cc;
+}
+
 async function applyScopeLabel(pr, commitDetail) {
     const addLabelEnabled = getInput('add_scope_label');
     console.log(JSON.stringify(commitDetail));
@@ -129,17 +136,23 @@ async function applyScopeLabel(pr, commitDetail) {
         return;
     }
 
+    prefix = getInput('scope_label_prefix')
     const octokit = getOctokit(getInput('token'));
     const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
+    const currentLabels = currentLabelsResult.data.map(label => label.name);
+    const newLabel = prefix + scopeName;
+    if (currentLabels.contains(newLabel)) {
+        return;
+    }
     const prevTitle = getPreviousTitle(pr)
     console.log("prev title " + prevTitle)
-    // cc = extractConventionalCommitData(prevTitle)
-    // if (cc.scope == scopeName) {
-    //     return;
-    // }
-    // removeLabel(octokit, pr, cc.scope)
-    prefix = getInput('scope_label_prefix')
-    createOrAddLabel(octokit, prefix + scopeName, pr)
+    if (prevTitle) {
+        prevCc = extractConventionalCommitData(prevTitle)
+        if (prevCc.scope) {
+            await removeLabel(octokit, pr, prefix + prevCc.scope);
+        }
+    }
+    createOrAddLabel(octokit, newLabel, pr)
 }
 
 async function getCurrentLabelsResult(octokit, pr) {
