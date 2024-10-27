@@ -1,3 +1,5 @@
+const { getInput, setFailed } = require('@actions/core');
+const { getOctokit, context } = require('@actions/github');
 
 export async function getCurrentLabelsResult(octokit, pr) {
     return await octokit.rest.issues.listLabelsOnIssue({

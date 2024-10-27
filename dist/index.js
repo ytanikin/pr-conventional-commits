@@ -13,6 +13,8 @@ __nccwpck_require__.r(__webpack_exports__);
 /* harmony export */   "getCurrentLabelsResult": () => (/* binding */ getCurrentLabelsResult),
 /* harmony export */   "removeLabel": () => (/* binding */ removeLabel)
 /* harmony export */ });
+const { getInput, setFailed } = __nccwpck_require__(2186);
+const { getOctokit, context } = __nccwpck_require__(5438);
 
 async function getCurrentLabelsResult(octokit, pr) {
     return await octokit.rest.issues.listLabelsOnIssue({
