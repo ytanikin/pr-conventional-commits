@@ -171,6 +171,5 @@ module.exports = {
     checkConventionalCommits,
     checkTicketNumber,
     applyLabel,
-    updateLabels,
-    generateColor
+    updateLabels
 };

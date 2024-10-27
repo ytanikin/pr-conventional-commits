@@ -6,6 +6,7 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 
 const { getInput, setFailed } = __nccwpck_require__(2186);
 const { getOctokit, context } = __nccwpck_require__(5438);
+const utils = __nccwpck_require__(1252);
 
 async function getCurrentLabelsResult(octokit, pr) {
     return await octokit.rest.issues.listLabelsOnIssue({
@@ -42,7 +43,7 @@ async function createOrAddLabel(octokit, label, pr) {
         });
     } catch (err) {
         // Label does not exist, create it
-        let color = generateColor(label);
+        let color = utils.generateColor(label);
         await createLabel(octokit, label, color);
     }
     await octokit.rest.issues.addLabels({
@@ -61,6 +62,7 @@ async function getCurrentLabels(octokit, pr) {
     });
     return currentLabelsResult;
 }
+
 module.exports = {
     getCurrentLabelsResult,
     removeLabel,
@@ -248,8 +250,7 @@ module.exports = {
     checkConventionalCommits,
     checkTicketNumber,
     applyLabel,
-    updateLabels,
-    generateColor
+    updateLabels
 };
 
 
@@ -31075,6 +31076,34 @@ function wrappy (fn, cb) {
     return ret
   }
 }
+
+
+/***/ }),
+
+/***/ 1252:
+/***/ ((module) => {
+
+/**
+ * Generates a color based on the string input.
+ */
+function generateColor(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    let color = '';
+    for (let i = 0; i < 3; i++) {
+        let value = (hash >> (i * 8)) & 0xFF;
+        color += ('00' + value.toString(16)).substr(-2);
+    }
+
+    return color;
+}
+
+module.exports = {
+    generateColor
+};
 
 
 /***/ }),

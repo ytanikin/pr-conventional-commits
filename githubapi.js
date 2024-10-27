@@ -1,5 +1,6 @@
 const { getInput, setFailed } = require('@actions/core');
 const { getOctokit, context } = require('@actions/github');
+const utils = require('./utils');
 
 async function getCurrentLabelsResult(octokit, pr) {
     return await octokit.rest.issues.listLabelsOnIssue({
@@ -36,7 +37,7 @@ async function createOrAddLabel(octokit, label, pr) {
         });
     } catch (err) {
         // Label does not exist, create it
-        let color = generateColor(label);
+        let color = utils.generateColor(label);
         await createLabel(octokit, label, color);
     }
     await octokit.rest.issues.addLabels({
@@ -55,6 +56,7 @@ async function getCurrentLabels(octokit, pr) {
     });
     return currentLabelsResult;
 }
+
 module.exports = {
     getCurrentLabelsResult,
     removeLabel,
