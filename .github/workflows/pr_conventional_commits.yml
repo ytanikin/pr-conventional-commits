@@ -39,7 +39,3 @@ jobs:
             }'
           add_scope_label: 'true' # false by default
           scope_label_prefix: '@'
-          scope_custom_labels: '{
-              "login": "@login team",
-              "dashboard": "dashboard scope"
-            }'
