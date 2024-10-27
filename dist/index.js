@@ -155,6 +155,7 @@ async function applyScopeLabel(pr, commitDetail) {
     const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
     const currentLabels = currentLabelsResult.data.map(label => label.name);
     const newLabel = prefix + scopeName;
+    console.log("current labels " + JSON.stringify(currentLabels))
     if (currentLabels.contains(newLabel)) {
         return;
     }
