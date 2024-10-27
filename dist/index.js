@@ -29,12 +29,11 @@ async function run() {
     await checkTicketNumber(commitDetail);
     const pr = context.payload.pull_request;
     console.log("log from console")
-    setOutput("log from output")
     await applyTaskTypeLabel(pr, commitDetail, commitDetail.type, typeCustomLabelType, commitDetail.breaking, JSON.parse(getInput('task_types')));
     const addLabel = getInput('add_scope_label');
     console.log('adding labels for scope' + addLabel)
-    setOutput("log from output add lable  " + addLabel )
     await applyScopeLabel(pr, commitDetail, commitDetail.scope);
+
 }
 
 
@@ -109,6 +108,7 @@ async function applyTaskTypeLabel(pr, commitDetail, labelName, labelType, breaki
     if (labelName === undefined) {
         return;
     }
+    console.log("applyTaskTypeLabel 1")
     const customLabelsInput = getInput(labelType);
     let customLabels = {};
     if (customLabelsInput) {
@@ -124,6 +124,8 @@ async function applyTaskTypeLabel(pr, commitDetail, labelName, labelType, breaki
             return;
         }
     }
+    console.log("applyTaskTypeLabel 2")
+
     await updateLabels(pr, commitDetail, customLabels, labelName, breaking, taskTypesDefinedInInput, labelType);
 }
 
@@ -230,18 +232,24 @@ async function updateLabels(pr, commitDetail, customLabels, labelName, breaking,
     const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
     const currentLabels = currentLabelsResult.data.map(label => label.name);
     const managedLabels = expectedTaskTypes.concat(['breaking change']);
+    console.log("applyTaskTypeLabel 4")
+
     // Include customLabels keys in managedLabels, if any
     Object.values(customLabels).forEach(label => {
         if (!managedLabels.includes(label)) {
             managedLabels.push(label);
         }
     });
+    console.log("applyTaskTypeLabel 5")
+
     let newLabels = [customLabels[labelName] ? customLabels[labelName] : labelName];
     const breakingChangeLabel = 'breaking change';
     if (breaking && !newLabels.includes(breakingChangeLabel)) {
         newLabels.push(breakingChangeLabel);
     }
     // Determine labels to remove and remove them
+    console.log("applyTaskTypeLabel 6")
+
     if (labelType === scopeCustomLabelType) {
         const labelsToRemove = currentLabels.filter(label => managedLabels.includes(label) && !newLabels.includes(label));
         for (let label of labelsToRemove) {
@@ -249,11 +257,15 @@ async function updateLabels(pr, commitDetail, customLabels, labelName, breaking,
         }
     }
     // Ensure new labels exist with the desired color and add them
+    console.log("applyTaskTypeLabel 7")
+
     for (let label of newLabels) {
         if (!currentLabels.includes(label)) {
             await createOrAddLabel(octokit, label, pr);
         }
     }
+    console.log("applyTaskTypeLabel 8")
+
 }
 
 /**

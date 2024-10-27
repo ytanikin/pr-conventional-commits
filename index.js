@@ -95,6 +95,7 @@ async function checkTicketNumber() {
  * @param breaking
  */
 async function applyTaskTypeLabel(pr, commitDetail, labelName, labelType, breaking, taskTypesDefinedInInput) {
+    console.log()
     const addLabel = getInput('add_label');
     if (addLabel !== undefined && addLabel.toLowerCase() === 'false') {
         return;
