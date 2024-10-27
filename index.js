@@ -54,6 +54,8 @@ async function checkConventionalCommits() {
     return cc;
 }
 
+
+
 /**
  * Check the ticket number based on the PR title and a provided regex.
  */
@@ -126,6 +128,7 @@ async function applyScopeLabel(pr, commitDetail) {
     if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined) {
         return;
     }
+    console.log("scope name " + scopeName)
 
     prefix = getInput('scope_label_prefix')
     const octokit = getOctokit(getInput('token'));
