@@ -14,7 +14,6 @@ async function run() {
     await applyScopeLabel(pr, commitDetail)
 }
 
-
 function parseConventionalCommit(pr) {
     const titleAst = parser.sync(pr.title.trimStart(), {
         headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$/,
