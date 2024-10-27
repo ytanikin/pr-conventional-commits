@@ -1,13 +1,86 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 5740:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { getInput, setFailed } = __nccwpck_require__(2186);
+const { getOctokit, context } = __nccwpck_require__(5438);
+const utils = __nccwpck_require__(1252);
+
+async function getCurrentLabelsResult(octokit, pr) {
+    return await octokit.rest.issues.listLabelsOnIssue({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number
+    });
+}
+
+async function removeLabel(octokit, pr, label) {
+    await octokit.rest.issues.removeLabel({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number,
+        name: label
+    });
+}
+
+async function createLabel(octokit, label, color) {
+    await octokit.rest.issues.createLabel({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        name: label,
+        color: color
+    });
+}
+
+async function createOrAddLabel(octokit, label, pr) {
+    try {
+        await octokit.rest.issues.getLabel({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            name: label
+        });
+    } catch (err) {
+        // Label does not exist, create it
+        let color = utils.generateColor(label);
+        await createLabel(octokit, label, color);
+    }
+    await octokit.rest.issues.addLabels({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number,
+        labels: [label],
+    });
+}
+
+async function getCurrentLabels(octokit, pr) {
+    const currentLabelsResult = await octokit.rest.issues.listLabelsOnIssue({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number
+    });
+    return currentLabelsResult;
+}
+
+module.exports = {
+    getCurrentLabelsResult,
+    removeLabel,
+    createLabel,
+    createOrAddLabel,
+    getCurrentLabels
+};
+
+
+/***/ }),
+
 /***/ 2932:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const { getInput, setFailed } = __nccwpck_require__(2186);
 const { getOctokit, context } = __nccwpck_require__(5438);
 const parser = __nccwpck_require__(1655)
-
+const githubApi = __nccwpck_require__(5740);
 
 /**
  * Main function to run the whole process.
@@ -17,8 +90,21 @@ async function run() {
     await checkTicketNumber(commitDetail);
     const pr = context.payload.pull_request;
     await applyLabel(pr, commitDetail);
+    await applyScopeLabel(pr, commitDetail)
 }
 
+function parseConventionalCommit(pr) {
+    const titleAst = parser.sync(pr.title.trimStart(), {
+        headerPattern: /^(\w*)(?:\((.*?)\))?!?: (.*)$/,
+        breakingHeaderPattern: /^(\w*)(?:\((.*?)\))?!: (.*)$/
+    });
+    const cc = {
+        type: titleAst.type ? titleAst.type : '',
+        scope: titleAst.scope ? titleAst.scope : '',
+        breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
+    };
+    return cc;
+}
 
 /**
  * Check the conventional commits of the task.
@@ -26,35 +112,40 @@ async function run() {
  * @returns {Promise<Object>} An object with details of the commit: type, scope and whether it's a breaking change.
  */
 async function checkConventionalCommits() {
-    let taskTypesInput = getInput('task_types');
-    if (!taskTypesInput) {
-        setFailed('Missing required input: task_types');
-        return;
-    }
-    let taskTypeList;
-    try {
-        taskTypeList = JSON.parse(taskTypesInput);
-    } catch (err) {
-        setFailed('Invalid task_types input. Expecting a JSON array.');
+    const taskTypeList = getTaskTypes();
+    if (taskTypeList === null) {
         return;
     }
 
     const pr = context.payload.pull_request;
-    const titleAst = parser.sync(pr.title.trimStart(), {
-        headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$/,
-        breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!: (.*)$/
-    });
-    const cc = {
-        type: titleAst.type ? titleAst.type : '',
-        scope: titleAst.scope ? titleAst.scope : '',
-        breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
-    };
+    const cc = parseConventionalCommit(pr);
     if (!cc.type || !taskTypeList.includes(cc.type)) {
         setFailed(`Invalid or missing task type: '${cc.type}'. Must be one of: ${taskTypeList.join(', ')}`);
         return;
     }
     return cc;
 }
+
+function getTaskTypes() {
+    const taskTypesInput = getInput('task_types');
+    if (!taskTypesInput) {
+        setFailed('Missing required input: task_types');
+        return null;
+    }
+
+    try {
+        const taskTypeList = JSON.parse(taskTypesInput);
+        if (!Array.isArray(taskTypeList)) {
+            throw new Error('Invalid format'); // Ensure the parsed result is an array
+        }
+        return taskTypeList;
+    } catch (err) {
+        setFailed('Invalid task_types input. Expecting a JSON array.');
+        return null;
+    }
+}
+
+
 
 /**
  * Check the ticket number based on the PR title and a provided regex.
@@ -80,22 +171,65 @@ async function applyLabel(pr, commitDetail) {
     if (addLabel !== undefined && addLabel.toLowerCase() === 'false') {
         return;
     }
+
     const customLabelsInput = getInput('custom_labels');
-    let customLabels = {};
-    if (customLabelsInput) {
-        try {
-            customLabels = JSON.parse(customLabelsInput);
-            // Validate that customLabels is an object and all its keys and values are strings
-            if (typeof customLabels !== 'object' || Array.isArray(customLabels) || Object.entries(customLabels).some(([k, v]) => typeof k !== 'string' || typeof v !== 'string')) {
-                setFailed('Invalid custom_labels input. Expecting a JSON object with string keys and values.');
-                return;
-            }
-        } catch (err) {
-            setFailed('Invalid custom_labels input. Unable to parse JSON.');
-            return;
-        }
+    const customLabels = parseCustomLabels(customLabelsInput);
+    if (customLabels === null) {
+        return;
     }
     await updateLabels(pr, commitDetail, customLabels);
+}
+
+function parseCustomLabels(customLabelsInput) {
+    if (!customLabelsInput) {
+        return {};
+    }
+
+    try {
+        const customLabels = JSON.parse(customLabelsInput);
+        // Validate that customLabels is an object and all its keys and values are strings
+        if (typeof customLabels !== 'object' || Array.isArray(customLabels) ||
+            Object.entries(customLabels).some(([k, v]) => typeof k !== 'string' || typeof v !== 'string')) {
+            setFailed('Invalid custom_labels input. Expecting a JSON object with string keys and values.');
+            return null;
+        }
+        return customLabels;
+    } catch (err) {
+        setFailed('Invalid custom_labels input. Unable to parse JSON.');
+        return null;
+    }
+}
+
+function extractConventionalCommitData(title) {
+    const titleAst = parser.sync(title.trimStart(), {
+        headerPattern: /^(\w*)(?:\(([\w$.\-/ ])\))?!?: (.*)$/,
+        breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-/ ])\))?!: (.*)$/
+    });
+    const cc = {
+        type: titleAst.type ? titleAst.type : '',
+        scope: titleAst.scope ? titleAst.scope : '',
+        breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
+    };
+    return cc;
+}
+
+async function applyScopeLabel(pr, commitDetail) {
+    const addLabelEnabled = getInput('add_scope_label');
+    scopeName = commitDetail.scope;
+    if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined || scopeName === "") {
+        return;
+    }
+    console.log("scope name " + scopeName)
+
+    prefix = getInput('scope_label_prefix')
+    const octokit = getOctokit(getInput('token'));
+    const currentLabelsResult = await githubApi.getCurrentLabelsResult(octokit, pr);
+    const currentLabels = currentLabelsResult.data.map(label => label.name);
+    const newLabel = prefix + scopeName;
+    if (currentLabels.includes(newLabel)) {
+        return;
+    }
+    githubApi.createOrAddLabel(octokit, newLabel, pr)
 }
 
 /**
@@ -104,11 +238,7 @@ async function applyLabel(pr, commitDetail) {
 async function updateLabels(pr, cc, customLabels) {
     const token = getInput('token');
     const octokit = getOctokit(token);
-    const currentLabelsResult = await octokit.rest.issues.listLabelsOnIssue({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: pr.number
-    });
+    const currentLabelsResult = await githubApi.getCurrentLabels(octokit, pr);
     const currentLabels = currentLabelsResult.data.map(label => label.name);
     let taskTypesInput = getInput('task_types');
     let taskTypeList = JSON.parse(taskTypesInput);
@@ -127,61 +257,16 @@ async function updateLabels(pr, cc, customLabels) {
     // Determine labels to remove and remove them
     const labelsToRemove = currentLabels.filter(label => managedLabels.includes(label) && !newLabels.includes(label));
     for (let label of labelsToRemove) {
-        await octokit.rest.issues.removeLabel({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: pr.number,
-            name: label
-        });
+        await githubApi.removeLabel(octokit, pr, label)
     }
     // Ensure new labels exist with the desired color and add them
     for (let label of newLabels) {
         if (!currentLabels.includes(label)) {
-            try {
-                await octokit.rest.issues.getLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    name: label
-                });
-            } catch (err) {
-                // Label does not exist, create it
-                let color = generateColor(label);
-                await octokit.rest.issues.createLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    name: label,
-                    color: color
-                });
-            }
-
-            // Add the label to the PR
-            await octokit.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                labels: [label],
-            });
+            await githubApi.createOrAddLabel(octokit, label, pr)
         }
     }
 }
 
-/**
- * Generates a color based on the string input.
- */
-function generateColor(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-
-    let color = '';
-    for (let i = 0; i < 3; i++) {
-        let value = (hash >> (i * 8)) & 0xFF;
-        color += ('00' + value.toString(16)).substr(-2);
-    }
-
-    return color;
-}
 
 run().catch(err => setFailed(err.message));
 
@@ -190,8 +275,7 @@ module.exports = {
     checkConventionalCommits,
     checkTicketNumber,
     applyLabel,
-    updateLabels,
-    generateColor
+    updateLabels
 };
 
 
@@ -31017,6 +31101,34 @@ function wrappy (fn, cb) {
     return ret
   }
 }
+
+
+/***/ }),
+
+/***/ 1252:
+/***/ ((module) => {
+
+/**
+ * Generates a color based on the string input.
+ */
+function generateColor(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    let color = '';
+    for (let i = 0; i < 3; i++) {
+        let value = (hash >> (i * 8)) & 0xFF;
+        color += ('00' + value.toString(16)).substr(-2);
+    }
+
+    return color;
+}
+
+module.exports = {
+    generateColor
+};
 
 
 /***/ }),
