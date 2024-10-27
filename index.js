@@ -140,17 +140,13 @@ async function applyScopeLabel(pr, commitDetail) {
     if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined || scopeName === "") {
         return;
     }
-    console.log("scope name " + scopeName)
-
-    prefix = getInput('scope_label_prefix')
     const octokit = getOctokit(getInput('token'));
     const currentLabelsResult = await githubApi.getCurrentLabelsResult(octokit, pr);
     const currentLabels = currentLabelsResult.data.map(label => label.name);
-    const newLabel = prefix + scopeName;
-    if (currentLabels.includes(newLabel)) {
+    if (currentLabels.includes(scopeName)) {
         return;
     }
-    githubApi.createOrAddLabel(octokit, newLabel, pr)
+    githubApi.createOrAddLabel(octokit, scopeName, pr)
 }
 
 /**
