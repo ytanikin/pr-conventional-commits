@@ -1,4 +1,4 @@
-const {getInput, setFailed} = require('@actions/core');
+const {getInput, setFailed, setOutput} = require('@actions/core');
 const {getOctokit, context} = require('@actions/github');
 const parser = require('conventional-commits-parser')
 
@@ -22,9 +22,12 @@ async function run() {
     const commitDetail = await checkConventionalCommits();
     await checkTicketNumber(commitDetail);
     const pr = context.payload.pull_request;
+    console.log("log from console")
+    setOutput("log from output")
     await applyTaskTypeLabel(pr, commitDetail, commitDetail.type, typeCustomLabelType, commitDetail.breaking, JSON.parse(getInput('task_types')));
     const addLabel = getInput('add_scope_label');
     console.log('adding labels for scope' + addLabel)
+    setOutput("log from output add lable  " + addLabel )
     await applyScopeLabel(pr, commitDetail, commitDetail.scope);
 }
 

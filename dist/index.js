@@ -4,7 +4,7 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /***/ 2932:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const {getInput, setFailed} = __nccwpck_require__(2186);
+const {getInput, setFailed, setOutput} = __nccwpck_require__(2186);
 const {getOctokit, context} = __nccwpck_require__(5438);
 const parser = __nccwpck_require__(1655)
 
@@ -28,14 +28,28 @@ async function run() {
     const commitDetail = await checkConventionalCommits();
     await checkTicketNumber(commitDetail);
     const pr = context.payload.pull_request;
-    await applyLabel(pr, commitDetail, commitDetail.type, typeCustomLabelType, commitDetail.breaking, JSON.parse(getInput('task_types')));
+    console.log("log from console")
+    setOutput("log from output")
+    await applyTaskTypeLabel(pr, commitDetail, commitDetail.type, typeCustomLabelType, commitDetail.breaking, JSON.parse(getInput('task_types')));
     const addLabel = getInput('add_scope_label');
-    if (addLabel !== undefined && addLabel.toLowerCase() === 'false') {
-        return;
-    }
-    await applyLabel(pr, commitDetail, commitDetail.scope, scopeCustomLabelType, commitDetail.breaking, getScopeCustomLabels());
+    console.log('adding labels for scope' + addLabel)
+    setOutput("log from output add lable  " + addLabel )
+    await applyScopeLabel(pr, commitDetail, commitDetail.scope);
 }
 
+
+function extractConventionalCommitData(title) {
+    const titleAst = parser.sync(title.trimStart(), {
+        headerPattern: /^(\w*)(?:\(([\w$.\-/ ])\))?!?: (.*)$/,
+        breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-/ ])\))?!: (.*)$/
+    });
+    const cc = {
+        type: titleAst.type ? titleAst.type : '',
+        scope: titleAst.scope ? titleAst.scope : '',
+        breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
+    };
+    return cc;
+}
 
 /**
  * Check the conventional commits of the task.
@@ -55,17 +69,8 @@ async function checkConventionalCommits() {
         setFailed('Invalid task_types input. Expecting a JSON array.');
         return;
     }
-
     const pr = context.payload.pull_request;
-    const titleAst = parser.sync(pr.title.trimStart(), {
-        headerPattern: /^(\w*)(?:\(([\w$.\-/ ])\))?!?: (.*)$/,
-        breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-/ ])\))?!: (.*)$/
-    });
-    const cc = {
-        type: titleAst.type ? titleAst.type : '',
-        scope: titleAst.scope ? titleAst.scope : '',
-        breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
-    };
+    const cc = extractConventionalCommitData(pr.title);
     if (!cc.type || !taskTypeList.includes(cc.type)) {
         setFailed(`Invalid or missing task type: '${cc.type}'. Must be one of: ${taskTypeList.join(', ')}`);
         return;
@@ -96,7 +101,7 @@ async function checkTicketNumber() {
  * @param labelType
  * @param breaking
  */
-async function applyLabel(pr, commitDetail, labelName, labelType, breaking, taskTypesDefinedInInput) {
+async function applyTaskTypeLabel(pr, commitDetail, labelName, labelType, breaking, taskTypesDefinedInInput) {
     const addLabel = getInput('add_label');
     if (addLabel !== undefined && addLabel.toLowerCase() === 'false') {
         return;
@@ -122,17 +127,107 @@ async function applyLabel(pr, commitDetail, labelName, labelType, breaking, task
     await updateLabels(pr, commitDetail, customLabels, labelName, breaking, taskTypesDefinedInInput, labelType);
 }
 
-/**
- * Update labels on the pull request.
- */
-async function updateLabels(pr, commitDetail, customLabels, labelName, breaking, expectedTaskTypes, labelType) {
-    const token = getInput('token');
-    const octokit = getOctokit(token);
-    const currentLabelsResult = await octokit.rest.issues.listLabelsOnIssue({
+async function getPreviousTitle(pr) {
+    try {
+        const octokit = getOctokit(getInput('token'));
+        const prNumber = github.context.payload.pull_request.number;
+        const owner = github.context.repo.owner;
+        const repo = github.context.repo.repo;
+
+        // Fetch PR events to check for title changes
+        const {data: events} = await octokit.rest.issues.listEventsForTimeline({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: prnumber,
+        });
+
+        // Find the most recent title change event before the current one
+        const previousTitleEvent = events
+            .filter(event => event.event === 'edited' && event.changes && event.changes.title)
+            .pop();
+
+        if (previousTitleEvent) {
+            return previousTitleEvent.changes.title.from
+        } else {
+            console.log('No previous title found.');
+            core.setOutput('no previous_title', null);
+        }
+
+    } catch (error) {
+    }
+}
+
+async function applyScopeLabel(pr, scopeName) {
+    const addLabelEnabled = getInput('add_scope_label');
+    if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined) {
+        return;
+    }
+
+    const octokit = getOctokit(getInput('token'));
+    const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
+    const prevTitle = getPreviousTitle(pr)
+
+    cc = extractConventionalCommitData(prevTitle)
+    if (cc.scope == scopeName) {
+        return;
+    }
+    removeLabel(octokit, pr, cc.scope)
+    prefix = getInput('scope_label_prefix')
+    createOrAddLabel(octokit, prefix + scopeName, pr)
+}
+
+async function getCurrentLabelsResult(octokit, pr) {
+    return await octokit.rest.issues.listLabelsOnIssue({
         owner: context.repo.owner,
         repo: context.repo.repo,
         issue_number: pr.number
     });
+}
+
+async function removeLabel(octokit, pr, label) {
+    await octokit.rest.issues.removeLabel({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number,
+        name: label
+    });
+}
+
+async function createLabel(octokit, label, color) {
+    await octokit.rest.issues.createLabel({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        name: label,
+        color: color
+    });
+}
+
+async function createOrAddLabel(octokit, label, pr) {
+    try {
+        await octokit.rest.issues.getLabel({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            name: label
+        });
+    } catch (err) {
+        // Label does not exist, create it
+        let color = generateColor(label);
+        await createLabel(octokit, label, color);
+    }
+    await octokit.rest.issues.addLabels({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number,
+        labels: [label],
+    });
+}
+
+/**
+ * Update labels on the pull request.
+ */
+async function updateLabels(pr, commitDetail, customLabels, labelName, breaking, expectedTaskTypes, labelType) {
+    const octokit = getOctokit(getInput('token'));
+    const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
     const currentLabels = currentLabelsResult.data.map(label => label.name);
     const managedLabels = expectedTaskTypes.concat(['breaking change']);
     // Include customLabels keys in managedLabels, if any
@@ -150,40 +245,13 @@ async function updateLabels(pr, commitDetail, customLabels, labelName, breaking,
     if (labelType === scopeCustomLabelType) {
         const labelsToRemove = currentLabels.filter(label => managedLabels.includes(label) && !newLabels.includes(label));
         for (let label of labelsToRemove) {
-            await octokit.rest.issues.removeLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                name: label
-            });
+            await removeLabel(octokit, pr, label);
         }
     }
     // Ensure new labels exist with the desired color and add them
     for (let label of newLabels) {
         if (!currentLabels.includes(label)) {
-            try {
-                await octokit.rest.issues.getLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    name: label
-                });
-            } catch (err) {
-                // Label does not exist, create it
-                let color = generateColor(label);
-                await octokit.rest.issues.createLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    name: label,
-                    color: color
-                });
-            }
-
-            await octokit.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                labels: [label],
-            });
+            await createOrAddLabel(octokit, label, pr);
         }
     }
 }
