@@ -104,7 +104,7 @@ async function getPreviousTitle(pr) {
         });
         console.log("events " + JSON.stringify(events))
         // Find the most recent title change event before the current one
-        const previousTitleEvent = events.filter(event => event.event === 'renamed' && event.rename && event.rename.from).pop();
+        const previousTitleEvent = events.reverse.find(event => event.event === 'renamed' && event.rename && event.rename.from);
         console.log("Pretitievent " + JSON.stringify(previousTitleEvent))
         if (previousTitleEvent) {
             return previousTitleEvent.rename.from
@@ -114,7 +114,7 @@ async function getPreviousTitle(pr) {
 
     } catch (error) {
         console.log("error " + JSON.stringify(error))
-        return null
+        return undefined
     }
 }
 
