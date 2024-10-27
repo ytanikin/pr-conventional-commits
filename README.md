@@ -53,6 +53,7 @@ Make sure that at least one merge option is enabled (merge commits, squashing, o
 
 When using the squash merge option, all commits from the head branch will be combined into a single commit in the base branch. The default commit message presented when merging a pull request with squash will be the PR title.
 
+![squash_config.png](squash_config.png)
 ## Examples
 
 ### Basic Usage, no label, no ticket numbers validation
