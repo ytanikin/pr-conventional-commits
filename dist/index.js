@@ -129,6 +129,7 @@ async function getPreviousTitle(pr) {
 }
 async function applyScopeLabel(pr, commitDetail) {
     const addLabelEnabled = getInput('add_scope_label');
+    console.log(JSON.stringify(commitDetail));
     scopeName = commitDetail.scope;
     if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined) {
         return;
