@@ -10,8 +10,8 @@ async function run() {
     const commitDetail = await checkConventionalCommits();
     await checkTicketNumber(commitDetail);
     const pr = context.payload.pull_request;
-    await applyLabel(pr, commitDetail);
-    await applyScopeLabel(pr. commitDetail)
+    // await applyLabel(pr, commitDetail);
+    await applyScopeLabel(pr, commitDetail)
 }
 
 
