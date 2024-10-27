@@ -102,7 +102,6 @@ async function applyLabel(pr, commitDetail) {
 async function getPreviousTitle(pr) {
     try {
         const octokit = getOctokit(getInput('token'));
-        const prNumber = github.context.payload.pull_request.number;
         const owner = github.context.repo.owner;
         const repo = github.context.repo.repo;
 
@@ -110,7 +109,7 @@ async function getPreviousTitle(pr) {
         const {data: events} = await octokit.rest.issues.listEventsForTimeline({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            issue_number: prNumber,
+            issue_number: pr.number,
         });
 
         // Find the most recent title change event before the current one
