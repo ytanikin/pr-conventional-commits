@@ -78,22 +78,33 @@ async function applyLabel(pr, commitDetail) {
     if (addLabel !== undefined && addLabel.toLowerCase() === 'false') {
         return;
     }
+
     const customLabelsInput = getInput('custom_labels');
-    let customLabels = {};
-    if (customLabelsInput) {
-        try {
-            customLabels = JSON.parse(customLabelsInput);
-            // Validate that customLabels is an object and all its keys and values are strings
-            if (typeof customLabels !== 'object' || Array.isArray(customLabels) || Object.entries(customLabels).some(([k, v]) => typeof k !== 'string' || typeof v !== 'string')) {
-                setFailed('Invalid custom_labels input. Expecting a JSON object with string keys and values.');
-                return;
-            }
-        } catch (err) {
-            setFailed('Invalid custom_labels input. Unable to parse JSON.');
-            return;
-        }
+    const customLabels = parseCustomLabels(customLabelsInput);
+    if (customLabels === null) {
+        return;
     }
     await updateLabels(pr, commitDetail, customLabels);
+}
+
+function parseCustomLabels(customLabelsInput) {
+    if (!customLabelsInput) {
+        return {};
+    }
+
+    try {
+        const customLabels = JSON.parse(customLabelsInput);
+        // Validate that customLabels is an object and all its keys and values are strings
+        if (typeof customLabels !== 'object' || Array.isArray(customLabels) ||
+            Object.entries(customLabels).some(([k, v]) => typeof k !== 'string' || typeof v !== 'string')) {
+            setFailed('Invalid custom_labels input. Expecting a JSON object with string keys and values.');
+            return null;
+        }
+        return customLabels;
+    } catch (err) {
+        setFailed('Invalid custom_labels input. Unable to parse JSON.');
+        return null;
+    }
 }
 
 function extractConventionalCommitData(title) {
