@@ -100,6 +100,7 @@ async function getPreviousTitle(pr) {
         const repo = github.context.repo.repo;
 
         // Fetch PR events to check for title changes
+        console
         const {data: events} = await octokit.rest.issues.listEventsForTimeline({
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -110,7 +111,7 @@ async function getPreviousTitle(pr) {
         const previousTitleEvent = events
             .filter(event => event.event === 'edited' && event.changes && event.changes.title)
             .pop();
-
+        console.log("Pretitievent " + JSON.stringify(previousTitleEvent))
         if (previousTitleEvent) {
             return previousTitleEvent.changes.title.from
         } else {
@@ -148,26 +149,29 @@ async function applyScopeLabel(pr, commitDetail) {
     const currentLabels = currentLabelsResult.data.map(label => label.name);
     const newLabel = prefix + scopeName;
     console.log("current labels " + JSON.stringify(currentLabels))
-    if (currentLabels.includes(newLabel)) {
-        return;
-    }
-    const prevTitle = getPreviousTitle(pr)
-    console.log("prev title " + JSON.stringify(prevTitle))
-    if (prevTitle) {
-        prevCc = extractConventionalCommitData(prevTitle)
-        const titleAst = parser.sync(prevTitle.trimStart(), {
-            headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$/,
-            breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!: (.*)$/
-        });
-        const cc = {
-            type: titleAst.type ? titleAst.type : '',
-            scope: titleAst.scope ? titleAst.scope : '',
-            breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
-        };
-        if (cc.scope) {
-            await removeLabel(octokit, pr, prefix + cc.scope);
-        }
-    }
+    console.log("new label " + newLabel)
+    console.log("includes " + currentLabels.includes(newLabel))
+    // if (currentLabels.includes(newLabel)) {
+    //     return;
+    // }
+    
+    // const prevTitle = getPreviousTitle(pr)
+    // console.log("prev title " + JSON.stringify(prevTitle))
+    // if (prevTitle) {
+    //     prevCc = extractConventionalCommitData(prevTitle)
+    //     const titleAst = parser.sync(prevTitle.trimStart(), {
+    //         headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$/,
+    //         breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!: (.*)$/
+    //     });
+    //     const cc = {
+    //         type: titleAst.type ? titleAst.type : '',
+    //         scope: titleAst.scope ? titleAst.scope : '',
+    //         breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
+    //     };
+    //     if (cc.scope) {
+    //         await removeLabel(octokit, pr, prefix + cc.scope);
+    //     }
+    // }
     createOrAddLabel(octokit, newLabel, pr)
 }
 
