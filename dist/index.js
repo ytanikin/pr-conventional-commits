@@ -124,6 +124,7 @@ async function getPreviousTitle(pr) {
         }
 
     } catch (error) {
+        console.log("error " + JSON.stringify(error))
     }
 }
 
