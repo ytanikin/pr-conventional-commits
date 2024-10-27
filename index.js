@@ -64,6 +64,7 @@ async function checkConventionalCommits() {
     }
     const pr = context.payload.pull_request;
     const cc = extractConventionalCommitData(pr.title);
+    console.log("cc " + cc)
     if (!cc.type || !taskTypeList.includes(cc.type)) {
         setFailed(`Invalid or missing task type: '${cc.type}'. Must be one of: ${taskTypeList.join(', ')}`);
         return;
@@ -95,7 +96,7 @@ async function checkTicketNumber() {
  * @param breaking
  */
 async function applyTaskTypeLabel(pr, commitDetail, labelName, labelType, breaking, taskTypesDefinedInInput) {
-    console.log()
+    console.log("add label")
     const addLabel = getInput('add_label');
     if (addLabel !== undefined && addLabel.toLowerCase() === 'false') {
         return;
