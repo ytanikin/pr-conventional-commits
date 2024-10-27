@@ -95,8 +95,8 @@ async function run() {
 
 function parseConventionalCommit(pr) {
     const titleAst = parser.sync(pr.title.trimStart(), {
-        headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$/,
-        breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!: (.*)$/
+        headerPattern: /^(\w*)(?:\((.*?)\))?!?: (.*)$/,
+        breakingHeaderPattern: /^(\w*)(?:\((.*?)\))?!: (.*)$/
     });
     const cc = {
         type: titleAst.type ? titleAst.type : '',
