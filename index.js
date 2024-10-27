@@ -11,6 +11,7 @@ async function run() {
     await checkTicketNumber(commitDetail);
     const pr = context.payload.pull_request;
     await applyLabel(pr, commitDetail);
+    await applyScopeLabel(pr. commitDetail)
 }
 
 
@@ -90,6 +91,100 @@ async function applyLabel(pr, commitDetail) {
         }
     }
     await updateLabels(pr, commitDetail, customLabels);
+}
+async function getPreviousTitle(pr) {
+    try {
+        const octokit = getOctokit(getInput('token'));
+        const prNumber = github.context.payload.pull_request.number;
+        const owner = github.context.repo.owner;
+        const repo = github.context.repo.repo;
+
+        // Fetch PR events to check for title changes
+        const {data: events} = await octokit.rest.issues.listEventsForTimeline({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: prnumber,
+        });
+
+        // Find the most recent title change event before the current one
+        const previousTitleEvent = events
+            .filter(event => event.event === 'edited' && event.changes && event.changes.title)
+            .pop();
+
+        if (previousTitleEvent) {
+            return previousTitleEvent.changes.title.from
+        } else {
+            console.log('No previous title found.');
+            core.setOutput('no previous_title', null);
+        }
+
+    } catch (error) {
+    }
+}
+async function applyScopeLabel(pr, commitDetail) {
+    const addLabelEnabled = getInput('add_scope_label');
+    scopeName = cc.scope;
+    if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined) {
+        return;
+    }
+
+    const octokit = getOctokit(getInput('token'));
+    const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
+    const prevTitle = getPreviousTitle(pr)
+
+    cc = extractConventionalCommitData(prevTitle)
+    if (cc.scope == scopeName) {
+        return;
+    }
+    removeLabel(octokit, pr, cc.scope)
+    prefix = getInput('scope_label_prefix')
+    createOrAddLabel(octokit, prefix + scopeName, pr)
+}
+
+async function getCurrentLabelsResult(octokit, pr) {
+    return await octokit.rest.issues.listLabelsOnIssue({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number
+    });
+}
+
+async function removeLabel(octokit, pr, label) {
+    await octokit.rest.issues.removeLabel({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number,
+        name: label
+    });
+}
+
+async function createLabel(octokit, label, color) {
+    await octokit.rest.issues.createLabel({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        name: label,
+        color: color
+    });
+}
+
+async function createOrAddLabel(octokit, label, pr) {
+    try {
+        await octokit.rest.issues.getLabel({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            name: label
+        });
+    } catch (err) {
+        // Label does not exist, create it
+        let color = generateColor(label);
+        await createLabel(octokit, label, color);
+    }
+    await octokit.rest.issues.addLabels({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number,
+        labels: [label],
+    });
 }
 
 /**
