@@ -87,6 +87,19 @@ async function run() {
 }
 
 
+function parseConventionalCommit(pr) {
+    const titleAst = parser.sync(pr.title.trimStart(), {
+        headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$/,
+        breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!: (.*)$/
+    });
+    const cc = {
+        type: titleAst.type ? titleAst.type : '',
+        scope: titleAst.scope ? titleAst.scope : '',
+        breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
+    };
+    return cc;
+}
+
 /**
  * Check the conventional commits of the task.
  * Parse the title of the pull request and validate against the task type list.
@@ -106,16 +119,7 @@ async function checkConventionalCommits() {
         return;
     }
     const pr = context.payload.pull_request;
-    const titleAst = parser.sync(pr.title.trimStart(), {
-        headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$/,
-        breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!: (.*)$/
-    });
-    const cc = {
-        type: titleAst.type ? titleAst.type : '',
-        scope: titleAst.scope ? titleAst.scope : '',
-        breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
-    };
-    console.log(JSON.stringify(cc))
+    const cc = parseConventionalCommit(pr);
     if (!cc.type || !taskTypeList.includes(cc.type)) {
         setFailed(`Invalid or missing task type: '${cc.type}'. Must be one of: ${taskTypeList.join(', ')}`);
         return;
@@ -180,7 +184,6 @@ function extractConventionalCommitData(title) {
 
 async function applyScopeLabel(pr, commitDetail) {
     const addLabelEnabled = getInput('add_scope_label');
-    console.log(JSON.stringify(commitDetail));
     scopeName = commitDetail.scope;
     if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined) {
         return;
@@ -191,30 +194,9 @@ async function applyScopeLabel(pr, commitDetail) {
     const currentLabelsResult = await githubApi.getCurrentLabelsResult(octokit, pr);
     const currentLabels = currentLabelsResult.data.map(label => label.name);
     const newLabel = prefix + scopeName;
-    // console.log("current labels " + JSON.stringify(currentLabels))
-    // console.log("new label " + newLabel)
-    // console.log("includes " + currentLabels.includes(newLabel))
     if (currentLabels.includes(newLabel)) {
         return;
     }
-    
-    // const prevTitle = getPreviousTitle(pr)
-    // console.log("prev title " + JSON.stringify(prevTitle))
-    // if (prevTitle) {
-    //     prevCc = extractConventionalCommitData(prevTitle)
-    //     const titleAst = parser.sync(prevTitle.trimStart(), {
-    //         headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$/,
-    //         breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!: (.*)$/
-    //     });
-    //     const cc = {
-    //         type: titleAst.type ? titleAst.type : '',
-    //         scope: titleAst.scope ? titleAst.scope : '',
-    //         breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
-    //     };
-    //     if (cc.scope) {
-    //         await removeLabel(octokit, pr, prefix + cc.scope);
-    //     }
-    // }
     githubApi.createOrAddLabel(octokit, newLabel, pr)
 }
 
