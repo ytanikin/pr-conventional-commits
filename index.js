@@ -1,7 +1,7 @@
 const { getInput, setFailed } = require('@actions/core');
 const { getOctokit, context } = require('@actions/github');
 const parser = require('conventional-commits-parser')
-
+const githubApi = require('./githubapi');
 
 /**
  * Main function to run the whole process.
@@ -93,31 +93,6 @@ async function applyLabel(pr, commitDetail) {
     await updateLabels(pr, commitDetail, customLabels);
 }
 
-async function getPreviousTitle(pr) {
-    try {
-        const octokit = getOctokit(getInput('token'));
-
-        const {data: events} = await octokit.rest.issues.listEventsForTimeline({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: pr.number,
-        });
-        console.log("events " + JSON.stringify(events))
-        // Find the most recent title change event before the current one
-        const previousTitleEvent = events.reverse.find(event => event.event === 'renamed' && event.rename && event.rename.from);
-        console.log("Pretitievent " + JSON.stringify(previousTitleEvent))
-        if (previousTitleEvent) {
-            return previousTitleEvent.rename.from
-        } else {
-            console.log('No previous title found.');
-        }
-
-    } catch (error) {
-        console.log("error " + JSON.stringify(error))
-        return undefined
-    }
-}
-
 function extractConventionalCommitData(title) {
     const titleAst = parser.sync(title.trimStart(), {
         headerPattern: /^(\w*)(?:\(([\w$.\-/ ])\))?!?: (.*)$/,
@@ -141,7 +116,7 @@ async function applyScopeLabel(pr, commitDetail) {
 
     prefix = getInput('scope_label_prefix')
     const octokit = getOctokit(getInput('token'));
-    const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
+    const currentLabelsResult = await githubApi.getCurrentLabelsResult(octokit, pr);
     const currentLabels = currentLabelsResult.data.map(label => label.name);
     const newLabel = prefix + scopeName;
     // console.log("current labels " + JSON.stringify(currentLabels))
@@ -168,62 +143,7 @@ async function applyScopeLabel(pr, commitDetail) {
     //         await removeLabel(octokit, pr, prefix + cc.scope);
     //     }
     // }
-    createOrAddLabel(octokit, newLabel, pr)
-}
-
-async function getCurrentLabelsResult(octokit, pr) {
-    return await octokit.rest.issues.listLabelsOnIssue({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: pr.number
-    });
-}
-
-async function removeLabel(octokit, pr, label) {
-    await octokit.rest.issues.removeLabel({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: pr.number,
-        name: label
-    });
-}
-
-async function createLabel(octokit, label, color) {
-    await octokit.rest.issues.createLabel({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        name: label,
-        color: color
-    });
-}
-
-async function createOrAddLabel(octokit, label, pr) {
-    try {
-        await octokit.rest.issues.getLabel({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            name: label
-        });
-    } catch (err) {
-        // Label does not exist, create it
-        let color = generateColor(label);
-        await createLabel(octokit, label, color);
-    }
-    await octokit.rest.issues.addLabels({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: pr.number,
-        labels: [label],
-    });
-}
-
-async function getCurrentLabels(octokit, pr) {
-    const currentLabelsResult = await octokit.rest.issues.listLabelsOnIssue({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: pr.number
-    });
-    return currentLabelsResult;
+    githubApi.createOrAddLabel(octokit, newLabel, pr)
 }
 
 /**
@@ -232,7 +152,7 @@ async function getCurrentLabels(octokit, pr) {
 async function updateLabels(pr, cc, customLabels) {
     const token = getInput('token');
     const octokit = getOctokit(token);
-    const currentLabelsResult = await getCurrentLabels(octokit, pr);
+    const currentLabelsResult = await githubApi.getCurrentLabels(octokit, pr);
     const currentLabels = currentLabelsResult.data.map(label => label.name);
     let taskTypesInput = getInput('task_types');
     let taskTypeList = JSON.parse(taskTypesInput);
@@ -251,12 +171,12 @@ async function updateLabels(pr, cc, customLabels) {
     // Determine labels to remove and remove them
     const labelsToRemove = currentLabels.filter(label => managedLabels.includes(label) && !newLabels.includes(label));
     for (let label of labelsToRemove) {
-        await removeLabel(octokit, pr, label)
+        await githubApi.removeLabel(octokit, pr, label)
     }
     // Ensure new labels exist with the desired color and add them
     for (let label of newLabels) {
         if (!currentLabels.includes(label)) {
-            await createOrAddLabel(octokit, label, pr)
+            await githubApi.createOrAddLabel(octokit, label, pr)
         }
     }
 }

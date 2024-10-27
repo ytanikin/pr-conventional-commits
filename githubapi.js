@@ -44,3 +44,12 @@ export async function createOrAddLabel(octokit, label, pr) {
         labels: [label],
     });
 }
+
+export async function getCurrentLabels(octokit, pr) {
+    const currentLabelsResult = await octokit.rest.issues.listLabelsOnIssue({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number
+    });
+    return currentLabelsResult;
+}
