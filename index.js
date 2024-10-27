@@ -274,7 +274,6 @@ module.exports = {
     run,
     checkConventionalCommits,
     checkTicketNumber,
-    applyLabel,
     updateLabels,
     generateColor
 };
