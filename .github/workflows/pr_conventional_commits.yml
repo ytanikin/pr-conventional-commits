@@ -37,3 +37,4 @@ jobs:
               "revert": "revert", 
               "wip": "WIP"
             }'
+          add_scope_label: 'true' # false by default
