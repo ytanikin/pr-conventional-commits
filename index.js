@@ -104,7 +104,7 @@ async function getPreviousTitle(pr) {
         const {data: events} = await octokit.rest.issues.listEventsForTimeline({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            issue_number: prnumber,
+            issue_number: prNumber,
         });
 
         // Find the most recent title change event before the current one
@@ -116,7 +116,6 @@ async function getPreviousTitle(pr) {
             return previousTitleEvent.changes.title.from
         } else {
             console.log('No previous title found.');
-            core.setOutput('no previous_title', null);
         }
 
     } catch (error) {
