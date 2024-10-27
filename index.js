@@ -138,29 +138,38 @@ function extractConventionalCommitData(title) {
 
 async function applyScopeLabel(pr, commitDetail) {
     const addLabelEnabled = getInput('add_scope_label');
-    // console.log(JSON.stringify(commitDetail));
-    // scopeName = commitDetail.scope;
-    // if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined) {
-    //     return;
-    // }
-    //
-    // prefix = getInput('scope_label_prefix')
-    // const octokit = getOctokit(getInput('token'));
-    // const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
-    // const currentLabels = currentLabelsResult.data.map(label => label.name);
-    // const newLabel = prefix + scopeName;
-    // if (currentLabels.contains(newLabel)) {
-    //     return;
-    // }
-    // const prevTitle = getPreviousTitle(pr)
-    // console.log("prev title " + prevTitle)
-    // if (prevTitle) {
-    //     prevCc = extractConventionalCommitData(prevTitle)
-    //     if (prevCc.scope) {
-    //         await removeLabel(octokit, pr, prefix + prevCc.scope);
-    //     }
-    // }
-    // createOrAddLabel(octokit, newLabel, pr)
+    console.log(JSON.stringify(commitDetail));
+    scopeName = commitDetail.scope;
+    if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined) {
+        return;
+    }
+
+    prefix = getInput('scope_label_prefix')
+    const octokit = getOctokit(getInput('token'));
+    const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
+    const currentLabels = currentLabelsResult.data.map(label => label.name);
+    const newLabel = prefix + scopeName;
+    if (currentLabels.contains(newLabel)) {
+        return;
+    }
+    const prevTitle = getPreviousTitle(pr)
+    console.log("prev title " + prevTitle)
+    if (prevTitle) {
+        prevCc = extractConventionalCommitData(prevTitle)
+        const titleAst = parser.sync(prevTitle.trimStart(), {
+            headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$/,
+            breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!: (.*)$/
+        });
+        const cc = {
+            type: titleAst.type ? titleAst.type : '',
+            scope: titleAst.scope ? titleAst.scope : '',
+            breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
+        };
+        if (cc.scope) {
+            await removeLabel(octokit, pr, prefix + cc.scope);
+        }
+    }
+    createOrAddLabel(octokit, newLabel, pr)
 }
 
 async function getCurrentLabelsResult(octokit, pr) {
