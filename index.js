@@ -23,6 +23,11 @@ async function run() {
     await checkTicketNumber(commitDetail);
     const pr = context.payload.pull_request;
     console.log("log from console")
+    console.log(pr.toString())
+    console.log(commitDetail)
+    console.log(commitDetail.type)
+    console.log(typeCustomLabelType)
+    
     await applyTaskTypeLabel(pr, commitDetail, commitDetail.type, typeCustomLabelType, commitDetail.breaking, JSON.parse(getInput('task_types')));
     const addLabel = getInput('add_scope_label');
     console.log('adding labels for scope' + addLabel)
