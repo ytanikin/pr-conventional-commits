@@ -38,4 +38,3 @@ jobs:
               "wip": "WIP"
             }'
           add_scope_label: 'true' # false by default
-          scope_label_prefix: '@'
