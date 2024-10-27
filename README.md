@@ -38,7 +38,7 @@ By default, this action adds labels based on the task type. For example, a pull 
 Adding a `!` in the PR title will automatically assign the breaking change label to the PR.
 
 If you prefer not to add labels, you can disable the labeling functionality by setting the `add_label` input to `'false'`. In such cases, the action will still validate the PR title against the Conventional Commits specification but will not add any labels.
-![img.png](pull_requests.png)
+![img.png](labels.png)
 
 ### Configuring Squash Merging
 
