@@ -217,17 +217,22 @@ async function createOrAddLabel(octokit, label, pr) {
     });
 }
 
+async function getCurrentLabels(octokit, pr) {
+    const currentLabelsResult = await octokit.rest.issues.listLabelsOnIssue({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: pr.number
+    });
+    return currentLabelsResult;
+}
+
 /**
  * Update labels on the pull request.
  */
 async function updateLabels(pr, cc, customLabels) {
     const token = getInput('token');
     const octokit = getOctokit(token);
-    const currentLabelsResult = await octokit.rest.issues.listLabelsOnIssue({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: pr.number
-    });
+    const currentLabelsResult = await getCurrentLabels(octokit, pr);
     const currentLabels = currentLabelsResult.data.map(label => label.name);
     let taskTypesInput = getInput('task_types');
     let taskTypeList = JSON.parse(taskTypesInput);
@@ -246,40 +251,12 @@ async function updateLabels(pr, cc, customLabels) {
     // Determine labels to remove and remove them
     const labelsToRemove = currentLabels.filter(label => managedLabels.includes(label) && !newLabels.includes(label));
     for (let label of labelsToRemove) {
-        await octokit.rest.issues.removeLabel({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: pr.number,
-            name: label
-        });
+        await removeLabel(octokit, pr, label)
     }
     // Ensure new labels exist with the desired color and add them
     for (let label of newLabels) {
         if (!currentLabels.includes(label)) {
-            try {
-                await octokit.rest.issues.getLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    name: label
-                });
-            } catch (err) {
-                // Label does not exist, create it
-                let color = generateColor(label);
-                await octokit.rest.issues.createLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    name: label,
-                    color: color
-                });
-            }
-
-            // Add the label to the PR
-            await octokit.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                labels: [label],
-            });
+            await createOrAddLabel(octokit, label, pr)
         }
     }
 }
