@@ -107,12 +107,12 @@ async function getPreviousTitle(pr) {
             repo: context.repo.repo,
             issue_number: pr.number,
         });
-
+        console.log("events " + JSON.stringify(events))
+        console.log("data " + JSON.stringify(data))
         // Find the most recent title change event before the current one
         const previousTitleEvent = events
             .filter(event => event.event === 'renamed' && event.rename && event.rename.from)
             .pop();
-        console.log("events " + JSON.stringify(events))
         console.log("Pretitievent " + JSON.stringify(previousTitleEvent))
         if (previousTitleEvent) {
             return previousTitleEvent.rename.from
