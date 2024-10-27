@@ -154,7 +154,7 @@ async function applyScopeLabel(pr, commitDetail) {
         return;
     }
     const prevTitle = getPreviousTitle(pr)
-    console.log("prev title " + prevTitle)
+    console.log("prev title " + JSON.stringify(prevTitle))
     if (prevTitle) {
         prevCc = extractConventionalCommitData(prevTitle)
         const titleAst = parser.sync(prevTitle.trimStart(), {
