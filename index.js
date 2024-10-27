@@ -123,7 +123,7 @@ async function getPreviousTitle(pr) {
 }
 async function applyScopeLabel(pr, commitDetail) {
     const addLabelEnabled = getInput('add_scope_label');
-    scopeName = cc.scope;
+    scopeName = commitDetail.scope;
     if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined) {
         return;
     }
@@ -131,12 +131,12 @@ async function applyScopeLabel(pr, commitDetail) {
     const octokit = getOctokit(getInput('token'));
     const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
     const prevTitle = getPreviousTitle(pr)
-
-    cc = extractConventionalCommitData(prevTitle)
-    if (cc.scope == scopeName) {
-        return;
-    }
-    removeLabel(octokit, pr, cc.scope)
+    console.log("prev title " + prevTitle)
+    // cc = extractConventionalCommitData(prevTitle)
+    // if (cc.scope == scopeName) {
+    //     return;
+    // }
+    // removeLabel(octokit, pr, cc.scope)
     prefix = getInput('scope_label_prefix')
     createOrAddLabel(octokit, prefix + scopeName, pr)
 }
