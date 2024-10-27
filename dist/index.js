@@ -115,7 +115,7 @@ async function getPreviousTitle(pr) {
         console.log("events " + JSON.stringify(events))
         console.log("Pretitievent " + JSON.stringify(previousTitleEvent))
         if (previousTitleEvent) {
-            return previousTitleEvent.changes.title.from
+            return previousTitleEvent.rename.from
         } else {
             console.log('No previous title found.');
         }
