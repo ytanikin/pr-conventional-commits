@@ -137,22 +137,22 @@ async function applyScopeLabel(pr, commitDetail) {
     }
 
     prefix = getInput('scope_label_prefix')
-    const octokit = getOctokit(getInput('token'));
-    const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
-    const currentLabels = currentLabelsResult.data.map(label => label.name);
-    const newLabel = prefix + scopeName;
-    if (currentLabels.contains(newLabel)) {
-        return;
-    }
-    const prevTitle = getPreviousTitle(pr)
-    console.log("prev title " + prevTitle)
-    if (prevTitle) {
-        prevCc = extractConventionalCommitData(prevTitle)
-        if (prevCc.scope) {
-            await removeLabel(octokit, pr, prefix + prevCc.scope);
-        }
-    }
-    createOrAddLabel(octokit, newLabel, pr)
+    // const octokit = getOctokit(getInput('token'));
+    // const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
+    // const currentLabels = currentLabelsResult.data.map(label => label.name);
+    // const newLabel = prefix + scopeName;
+    // if (currentLabels.contains(newLabel)) {
+    //     return;
+    // }
+    // const prevTitle = getPreviousTitle(pr)
+    // console.log("prev title " + prevTitle)
+    // if (prevTitle) {
+    //     prevCc = extractConventionalCommitData(prevTitle)
+    //     if (prevCc.scope) {
+    //         await removeLabel(octokit, pr, prefix + prevCc.scope);
+    //     }
+    // }
+    // createOrAddLabel(octokit, newLabel, pr)
 }
 
 async function getCurrentLabelsResult(octokit, pr) {
