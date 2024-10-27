@@ -97,26 +97,14 @@ async function getPreviousTitle(pr) {
     try {
         const octokit = getOctokit(getInput('token'));
 
-        const { data: prData } = await octokit.rest.pulls.get({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: pr.number,
-        });
-        console.log("data " + JSON.stringify(data))
-        console.log("prData " + JSON.stringify(prData))
-        console.log("Current Title:", prData.title);
-        
         const {data: events} = await octokit.rest.issues.listEventsForTimeline({
             owner: context.repo.owner,
             repo: context.repo.repo,
             issue_number: pr.number,
         });
         console.log("events " + JSON.stringify(events))
-        console.log("data " + JSON.stringify(data))
         // Find the most recent title change event before the current one
-        const previousTitleEvent = events
-            .filter(event => event.event === 'renamed' && event.rename && event.rename.from)
-            .pop();
+        const previousTitleEvent = events.filter(event => event.event === 'renamed' && event.rename && event.rename.from).pop();
         console.log("Pretitievent " + JSON.stringify(previousTitleEvent))
         if (previousTitleEvent) {
             return previousTitleEvent.rename.from
@@ -126,6 +114,7 @@ async function getPreviousTitle(pr) {
 
     } catch (error) {
         console.log("error " + JSON.stringify(error))
+        return null
     }
 }
 
