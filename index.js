@@ -144,30 +144,30 @@ async function applyScopeLabel(pr, commitDetail) {
     const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
     const currentLabels = currentLabelsResult.data.map(label => label.name);
     const newLabel = prefix + scopeName;
-    console.log("current labels " + JSON.stringify(currentLabels))
-    console.log("new label " + newLabel)
-    console.log("includes " + currentLabels.includes(newLabel))
-    // if (currentLabels.includes(newLabel)) {
-    //     return;
-    // }
-    
-    const prevTitle = getPreviousTitle(pr)
-    console.log("prev title " + JSON.stringify(prevTitle))
-    if (prevTitle) {
-        prevCc = extractConventionalCommitData(prevTitle)
-        const titleAst = parser.sync(prevTitle.trimStart(), {
-            headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$/,
-            breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!: (.*)$/
-        });
-        const cc = {
-            type: titleAst.type ? titleAst.type : '',
-            scope: titleAst.scope ? titleAst.scope : '',
-            breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
-        };
-        if (cc.scope) {
-            await removeLabel(octokit, pr, prefix + cc.scope);
-        }
+    // console.log("current labels " + JSON.stringify(currentLabels))
+    // console.log("new label " + newLabel)
+    // console.log("includes " + currentLabels.includes(newLabel))
+    if (currentLabels.includes(newLabel)) {
+        return;
     }
+    
+    // const prevTitle = getPreviousTitle(pr)
+    // console.log("prev title " + JSON.stringify(prevTitle))
+    // if (prevTitle) {
+    //     prevCc = extractConventionalCommitData(prevTitle)
+    //     const titleAst = parser.sync(prevTitle.trimStart(), {
+    //         headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$/,
+    //         breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!: (.*)$/
+    //     });
+    //     const cc = {
+    //         type: titleAst.type ? titleAst.type : '',
+    //         scope: titleAst.scope ? titleAst.scope : '',
+    //         breaking: titleAst.notes && titleAst.notes.some(note => note.title === 'BREAKING CHANGE'),
+    //     };
+    //     if (cc.scope) {
+    //         await removeLabel(octokit, pr, prefix + cc.scope);
+    //     }
+    // }
     createOrAddLabel(octokit, newLabel, pr)
 }
 
