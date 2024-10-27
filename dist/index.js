@@ -136,13 +136,13 @@ function extractConventionalCommitData(title) {
 
 async function applyScopeLabel(pr, commitDetail) {
     const addLabelEnabled = getInput('add_scope_label');
-    console.log(JSON.stringify(commitDetail));
-    scopeName = commitDetail.scope;
-    if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined) {
-        return;
-    }
-
-    prefix = getInput('scope_label_prefix')
+    // console.log(JSON.stringify(commitDetail));
+    // scopeName = commitDetail.scope;
+    // if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined) {
+    //     return;
+    // }
+    //
+    // prefix = getInput('scope_label_prefix')
     // const octokit = getOctokit(getInput('token'));
     // const currentLabelsResult = await getCurrentLabelsResult(octokit, pr);
     // const currentLabels = currentLabelsResult.data.map(label => label.name);
