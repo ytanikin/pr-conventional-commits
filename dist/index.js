@@ -41,7 +41,7 @@ async function checkConventionalCommits() {
     }
     const pr = context.payload.pull_request;
     const cc = extractConventionalCommitData(pr.title);
-    console.log("cc " + cc.type + " " + cc.toString())
+    console.log(JSON.stringify(cc))
     if (!cc.type || !taskTypeList.includes(cc.type)) {
         setFailed(`Invalid or missing task type: '${cc.type}'. Must be one of: ${taskTypeList.join(', ')}`);
         return;
