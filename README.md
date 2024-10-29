@@ -79,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: PR Conventional Commit Validation
-        uses:  ytanikin/pr-conventional-commits@1.1.0
+        uses:  ytanikin/pr-conventional-commits@1.4.0
         with:
           task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
           add_label: 'false'
@@ -105,7 +105,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: PR Conventional Commit Validation
-        uses:  ytanikin/pr-conventional-commits@1.1.0
+        uses:  ytanikin/pr-conventional-commits@1.4.0
         with:
          task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
          add_label: 'false'
@@ -132,14 +132,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: PR Conventional Commit Validation
-        uses:  ytanikin/pr-conventional-commits@1.1.0
+        uses:  ytanikin/pr-conventional-commits@1.4.0
         with:
           task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
 ```
 
 For this configuration, the following PR title is valid: `feat: add new feature`. **The PR will be labeled as** `feat`.
 
-## Example Usage with ticket number validation and custom labeling
+## Example Usage with ticket number validation, custom labeling and scope labeling
 
 This configuration checks for conventional commits are using the specified `task_types`, validates ticket numbers, and adds custom labels.
 
@@ -157,11 +157,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: PR Conventional Commit Validation
-        uses:  ytanikin/pr-conventional-commits@1.1.0
+        uses:  ytanikin/pr-conventional-commits@1.4.0
         with:
          task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
          ticket_key_regex: '^PROJECT-\\d{2,5}$'
          custom_labels: '{"feat": "feature", "fix": "fix", "docs": "documentation", "test": "test", "ci": "CI/CD", "refactor": "refactor", "perf": "performance", "chore": "chore", "revert": "revert", "wip": "WIP"}'
+         add_scope_labels: 'true'
 ```
 
 For this configuration, the following PR title is valid: `feat: PROJECT-12345 add new feature`.
