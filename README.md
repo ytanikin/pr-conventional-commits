@@ -162,7 +162,7 @@ jobs:
          task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
          ticket_key_regex: '^PROJECT-\\d{2,5}$'
          custom_labels: '{"feat": "feature", "fix": "fix", "docs": "documentation", "test": "test", "ci": "CI/CD", "refactor": "refactor", "perf": "performance", "chore": "chore", "revert": "revert", "wip": "WIP"}'
-         add_scope_labels: 'true'
+         add_scope_label: 'true'
 ```
 
 For this configuration, the following PR title is valid: `feat: PROJECT-12345 add new feature`.
