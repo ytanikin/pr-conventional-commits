@@ -22,7 +22,6 @@ This GitHub Action checks that the PR title adheres to the [Conventional Commits
 - **Breaking Change**: Adding a `!` in the PR title will automatically assign the breaking change label to the PR.
 - **Filtering by labels**: You can filter out specific labels in GitHub Pull Requests UI
 
-
 ### Inputs
 
 - `task_types` (required): An array of task types. Example: `["feat","fix","docs","test","ci","refactor","perf","chore","revert"]`.
@@ -35,9 +34,15 @@ When a pull request title adheres to the Conventional Commits specification, thi
 
 By default, this action adds labels based on the task type. For example, a pull request with a task type of `ci` will be labeled as `CI/CD`. You can customize the label names by providing a `custom_labels` input. 
 
-Adding a `!` in the PR title will automatically assign the breaking change label to the PR.
+Adding a `!` in the PR title will automatically assign the `breaking change` label to the PR.
 
-If you prefer not to add labels, you can disable the labeling functionality by setting the `add_label` input to `'false'`. In such cases, the action will still validate the PR title against the Conventional Commits specification but will not add any labels.
+
+If you prefer not to add labels, you can disable the labeling functionality by setting the `add_label` input to `'false'` or remove the flag, by default is disabled.
+In such cases, the action will still validate the PR title against the Conventional Commits specification but will not add any labels.
+
+You can also control adding labels for `scope`, this is disabled by default, to enable it, add `add_scope_label: true` in the action's configuration
+
+Example
 ![img.png](labels.png)
 
 ### Configuring Squash Merging
