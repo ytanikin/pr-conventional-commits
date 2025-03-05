@@ -47,18 +47,20 @@ Example
 
 ### Configuring Squash Merging
 
-When merging pull requests, you can configure the merge behavior, including the option for squashing. Please follow these steps:
+When merging pull requests, you can configure the merge behavior, including the option for squashing. Follow these steps (or [Github's guide](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/configuring-commit-squashing-for-pull-requests)):
 
-Go to your repository's Settings tab.
-Select the Options menu on the left sidebar.
-Under the Merge button section, you will find the merge options.
-To enable squash merging, select the checkbox for Allow squash merging.
-Select PR title as a default message for squashed commit.
-Make sure that at least one merge option is enabled (merge commits, squashing, or rebasing).
+1. Go to your repository's `Settings` tab.
+2. Select the `General` menu on the left sidebar.
+3. Under `Pull Requests`, select `Allow squash merging`. This allows contributors to merge a pull request by squashing all commits into a single commit.
+4. Select PR title as a default message for squashed commit.
+
+
+![squash_config.png](squash_config.png)
 
 When using the squash merge option, all commits from the head branch will be combined into a single commit in the base branch. The default commit message presented when merging a pull request with squash will be the PR title.
 
-![squash_config.png](squash_config.png)
+Note: Make sure that at least one merge option is enabled (merge commits, squashing, or rebasing).
+
 ## Examples
 
 ### Basic Usage, no label, no ticket numbers validation
