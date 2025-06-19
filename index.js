@@ -34,6 +34,7 @@ function parseConventionalCommit(pr) {
  */
 async function checkConventionalCommits() {
     const taskTypeList = getTaskTypes();
+    const scopeList = getScopes();
     if (taskTypeList === null) {
         return;
     }
@@ -43,6 +44,13 @@ async function checkConventionalCommits() {
     if (!cc.type || !taskTypeList.includes(cc.type)) {
         setFailed(`Invalid or missing task type: '${cc.type}'. Must be one of: ${taskTypeList.join(', ')}`);
         return;
+    }
+    if (scopeList.length > 0) {
+        const result = scopeList.filter(scope => cc.scope.contains(scope));
+        if (result.length === 0) {
+            setFailed(`Invalid or missing scope: '${cc.scope}'. Must be one of: ${scopeList.join(', ')}`);
+            return;
+        }
     }
     return cc;
 }
@@ -66,6 +74,23 @@ function getTaskTypes() {
     }
 }
 
+function getScopes() {
+    const scopesInput = getInput('scopes');
+    if (!scopesInput) {
+        return [];
+    }
+
+    try {
+        const scopeList = JSON.parse(scopesInput);
+        if (!Array.isArray(scopeList)) {
+            throw new Error('Invalid format'); // Ensure the parsed result is an array
+        }
+        return scopeList;
+    } catch (err) {
+        setFailed('Invalid scopes input. Expecting a JSON array.');
+        return [];
+    }
+}
 
 
 /**
