@@ -66,6 +66,46 @@ describe('checkConventionalCommits', () => {
         await myModule.checkConventionalCommits();
         expect(setFailed).toHaveBeenCalledWith('Invalid task_types input. Expecting a JSON array.');
     });
+
+    it('should fail when task type is invalid and fail_on_non_conventional is true', async () => {
+        getInput.mockImplementation((inputName) => {
+            if (inputName === 'task_types') {
+                return JSON.stringify(['feat', 'fix']);
+            }
+            if (inputName === 'fail_on_non_conventional') {
+                return 'true';
+            }
+            return undefined;
+        });
+        context.payload = {
+            pull_request: { title: 'invalid(login): add new login feature' }
+        };
+
+        const commitDetail = await myModule.checkConventionalCommits();
+
+        expect(setFailed).toHaveBeenCalledWith("Invalid or missing task type: 'invalid'. Must be one of: feat, fix");
+        expect(commitDetail).toBeUndefined();
+    });
+
+    it('should not fail when task type is invalid and fail_on_non_conventional is false', async () => {
+        getInput.mockImplementation((inputName) => {
+            if (inputName === 'task_types') {
+                return JSON.stringify(['feat', 'fix']);
+            }
+            if (inputName === 'fail_on_non_conventional') {
+                return 'false';
+            }
+            return undefined;
+        });
+        context.payload = {
+            pull_request: { title: 'invalid(login): add new login feature' }
+        };
+
+        const commitDetail = await myModule.checkConventionalCommits();
+
+        expect(setFailed).not.toHaveBeenCalled();
+        expect(commitDetail).toBeNull();
+    });
 });
 
 describe('checkTicketNumber', () => {
@@ -76,6 +116,23 @@ describe('checkTicketNumber', () => {
         };
         await myModule.checkTicketNumber();
         expect(setFailed).toHaveBeenCalledWith('Invalid or missing task number: \'\'. Must match: \\d+');
+    });
+
+    it('should not fail when ticket number is invalid and fail_on_non_conventional is false', async () => {
+        getInput.mockImplementation((inputName) => {
+            if (inputName === 'ticket_key_regex') {
+                return '\\d+';
+            }
+            if (inputName === 'fail_on_non_conventional') {
+                return 'false';
+            }
+            return undefined;
+        });
+        context.payload = {
+            pull_request: { title: 'no number here' }
+        };
+        await myModule.checkTicketNumber();
+        expect(setFailed).not.toHaveBeenCalled();
     });
 });
 
@@ -253,10 +310,27 @@ describe('checkScope', () => {
     it('should fail when scope_types input is not an array', async () => {
         getInput.mockReturnValue('{"login": "value"}');
         const commitDetail = { type: 'feat', scope: 'login', breaking: false };
-        
+
         await myModule.checkScope(commitDetail);
-        
+
         expect(setFailed).toHaveBeenCalledWith('Invalid scope_types input. Expecting a JSON array.');
+    });
+
+    it('should not fail when scope is invalid and fail_on_non_conventional is false', async () => {
+        getInput.mockImplementation((inputName) => {
+            if (inputName === 'scope_types') {
+                return JSON.stringify(['login', 'signup']);
+            }
+            if (inputName === 'fail_on_non_conventional') {
+                return 'false';
+            }
+            return undefined;
+        });
+        const commitDetail = { type: 'feat', scope: 'invalid', breaking: false };
+
+        await myModule.checkScope(commitDetail);
+
+        expect(setFailed).not.toHaveBeenCalled();
     });
 });
 

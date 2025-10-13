@@ -15,6 +15,10 @@ inputs:
     description: 'Whether to add labels'
     required: false
     default: 'true'
+  fail_on_non_conventional:
+    description: 'Whether to fail the job if the PR title is not conventional. If false, the action will only log warnings.'
+    required: false
+    default: 'true'
   add_scope_label:
     description: 'Whether to add scope labels, such login for the title "fix(login): fix message in login page'
     required: false

@@ -89,9 +89,13 @@ async function run() {
     const commitDetail = await checkConventionalCommits();
     await checkScope(commitDetail);
     await checkTicketNumber(commitDetail);
-    const pr = context.payload.pull_request;
-    await applyLabel(pr, commitDetail);
-    await applyScopeLabel(pr, commitDetail)
+
+    // Only apply labels if commitDetail is valid
+    if (commitDetail) {
+        const pr = context.payload.pull_request;
+        await applyLabel(pr, commitDetail);
+        await applyScopeLabel(pr, commitDetail);
+    }
 }
 
 function parseConventionalCommit(pr) {
@@ -121,7 +125,15 @@ async function checkConventionalCommits() {
     const pr = context.payload.pull_request;
     const cc = parseConventionalCommit(pr);
     if (!cc.type || !taskTypeList.includes(cc.type)) {
-        setFailed(`Invalid or missing task type: '${cc.type}'. Must be one of: ${taskTypeList.join(', ')}`);
+        const failOnNonConventional = getInput('fail_on_non_conventional');
+        const errorMessage = `Invalid or missing task type: '${cc.type}'. Must be one of: ${taskTypeList.join(', ')}`;
+
+        if (failOnNonConventional !== undefined && failOnNonConventional.toLowerCase() === 'false') {
+            console.log(`Warning: ${errorMessage}`);
+            return null;
+        }
+
+        setFailed(errorMessage);
         return;
     }
     return cc;
@@ -153,14 +165,22 @@ async function checkScope(commitDetail) {
     if (!commitDetail) {
         return;
     }
-    
+
     const scopeTypes = getScopeTypes();
     if (scopeTypes === null) {
         return;
     }
 
     if (!scopeTypes.includes(commitDetail.scope)) {
-        setFailed(`Invalid or missing scope: '${commitDetail.scope}'. Must be one of: ${scopeTypes.join(', ')}`);
+        const failOnNonConventional = getInput('fail_on_non_conventional');
+        const errorMessage = `Invalid or missing scope: '${commitDetail.scope}'. Must be one of: ${scopeTypes.join(', ')}`;
+
+        if (failOnNonConventional !== undefined && failOnNonConventional.toLowerCase() === 'false') {
+            console.log(`Warning: ${errorMessage}`);
+            return;
+        }
+
+        setFailed(errorMessage);
     }
 }
 
@@ -192,7 +212,15 @@ async function checkTicketNumber() {
         const taskNumberMatch = pr.title.match(new RegExp(ticketKeyRegex));
         const taskNumber = taskNumberMatch ? taskNumberMatch[0] : '';
         if (!taskNumber) {
-            setFailed(`Invalid or missing task number: '${taskNumber}'. Must match: ${ticketKeyRegex}`);
+            const failOnNonConventional = getInput('fail_on_non_conventional');
+            const errorMessage = `Invalid or missing task number: '${taskNumber}'. Must match: ${ticketKeyRegex}`;
+
+            if (failOnNonConventional !== undefined && failOnNonConventional.toLowerCase() === 'false') {
+                console.log(`Warning: ${errorMessage}`);
+                return;
+            }
+
+            setFailed(errorMessage);
         }
     }
 }
