@@ -27,7 +27,8 @@ This GitHub Action checks that the PR title adheres to the [Conventional Commits
 - `task_types` (required): An array of task types. Example: `["feat","fix","docs","test","ci","refactor","perf","chore","revert"]`.
 - `ticket_key_regex` (optional): Regular expression to match issue number in PR title. Default is not validating. Example: `"^PROJECT-\\d{2,5}$"`.
 - `add_label` (optional): Whether to add labels. Default is `'true'`.
-- `custom_labels` (optional): A JSON string mapping task types to custom label names. Example: `{"feat": "feature", "fix": "fix", "docs": "documentation", "test": "test", "ci": "CI/CD", "refactor": "refactor", "perf": "performance", "chore": "chore", "revert": "revert", "wip": "WIP"}`.
+- `custom_labels` (optional): A JSON string mapping task types to custom label names. Example: `{"feat": "feature", "fix": "fix", "docs": "documentation", "test": "test", "ci": "CI/CD", "refactor": "refactor", "perf": "performance", "chore": "chore", "revert": "revert", "wip": "WIP"}`. Cannot be used together with `label_map`.
+- `label_map` (optional): A YAML map of task types to custom label names. Alternative to `custom_labels` with YAML syntax. Cannot be used together with `custom_labels`.
 - `add_scope_label` (optional): Whether to add scope labels. Default is `'false'`.
 - `add_scope_label_only_existing` (optional): Only apply scope labels if they already exist in the repository (do not create new labels). Default is `'false'`.
 - `add_scope_label_map` (optional): A YAML map of scopes to custom label names. Allows mapping scope values to different label names.
@@ -172,6 +173,35 @@ jobs:
 
 For this configuration, the following PR title is valid: `feat: PROJECT-12345 add new feature`.
 **The PR will be labeled as `feature`.**
+
+## Example Usage with label_map (YAML alternative to custom_labels)
+
+This configuration uses `label_map` instead of `custom_labels` for a cleaner YAML syntax. Note that you cannot use both `custom_labels` and `label_map` together.
+
+```yaml
+name: PR Conventional Commit Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  validate-pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR Conventional Commit Validation
+        uses:  ytanikin/pr-conventional-commits@1.4.0
+        with:
+         task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
+         label_map: |
+           feat: feature
+           fix: bugfix
+           docs: documentation
+           ci: 'CI/CD'
+           perf: performance
+```
+
+For this configuration, a PR with title `feat: add new feature` will be labeled with `feature` instead of `feat`.
 
 ## Example Usage with scope label mapping
 

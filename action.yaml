@@ -37,6 +37,9 @@ inputs:
   custom_labels:
     description: 'A JSON string mapping task types to custom label names. Example: {"feat": "feature", "fix": "fix", "docs": "documentation", "test": "test", "ci": "CI/CD", "refactor": "refactor", "perf": "performance", "chore": "chore", "revert": "revert", "wip": "WIP"}'
     required: false
+  label_map:
+    description: 'A YAML map of task types to custom label names. Alternative to custom_labels with YAML syntax. Cannot be used together with custom_labels.'
+    required: false
 runs:
   using: 'node20'
   main: 'dist/index.js'

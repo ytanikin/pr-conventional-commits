@@ -265,11 +265,25 @@ async function applyLabel(pr, commitDetail) {
     }
 
     const customLabelsInput = getInput('custom_labels');
-    const customLabels = parseCustomLabels(customLabelsInput);
-    if (customLabels === null) {
+    const labelMapInput = getInput('label_map');
+
+    // Check for mutual exclusivity
+    if (customLabelsInput && labelMapInput) {
+        setFailed('Cannot use both custom_labels and label_map. Please use only one.');
         return;
     }
-    await updateLabels(pr, commitDetail, customLabels);
+
+    let labelMapping;
+    if (labelMapInput) {
+        labelMapping = parseLabelMap(labelMapInput);
+    } else {
+        labelMapping = parseCustomLabels(customLabelsInput);
+    }
+
+    if (labelMapping === null) {
+        return;
+    }
+    await updateLabels(pr, commitDetail, labelMapping);
 }
 
 function parseCustomLabels(customLabelsInput) {
@@ -288,6 +302,26 @@ function parseCustomLabels(customLabelsInput) {
         return customLabels;
     } catch (err) {
         setFailed('Invalid custom_labels input. Unable to parse JSON.');
+        return null;
+    }
+}
+
+function parseLabelMap(labelMapInput) {
+    if (!labelMapInput) {
+        return {};
+    }
+
+    try {
+        const labelMap = yaml.load(labelMapInput);
+        // Validate that labelMap is an object with string keys and values
+        if (typeof labelMap !== 'object' || Array.isArray(labelMap) || labelMap === null ||
+            Object.entries(labelMap).some(([k, v]) => typeof k !== 'string' || typeof v !== 'string')) {
+            setFailed('Invalid label_map input. Expecting a YAML object with string keys and values.');
+            return null;
+        }
+        return labelMap;
+    } catch (err) {
+        setFailed('Invalid label_map input. Unable to parse YAML.');
         return null;
     }
 }
@@ -404,7 +438,8 @@ module.exports = {
     applyLabel,
     updateLabels,
     applyScopeLabel,
-    parseScopeLabelMap
+    parseScopeLabelMap,
+    parseLabelMap
 };
 
 

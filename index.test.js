@@ -475,6 +475,159 @@ describe("parseScopeLabelMap", () => {
   });
 });
 
+describe("parseLabelMap", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it("should return empty object when input is empty", () => {
+    const result = myModule.parseLabelMap("");
+    expect(result).toEqual({});
+  });
+
+  it("should return empty object when input is undefined", () => {
+    const result = myModule.parseLabelMap(undefined);
+    expect(result).toEqual({});
+  });
+
+  it("should parse valid YAML map", () => {
+    const yamlInput = "feat: feature\nfix: bugfix";
+    const result = myModule.parseLabelMap(yamlInput);
+    expect(result).toEqual({
+      feat: "feature",
+      fix: "bugfix",
+    });
+  });
+
+  it("should parse YAML map with special characters in values", () => {
+    const yamlInput = "ci: 'CI/CD'\nperf: 'performance 🚀'";
+    const result = myModule.parseLabelMap(yamlInput);
+    expect(result).toEqual({
+      ci: "CI/CD",
+      perf: "performance 🚀",
+    });
+  });
+
+  it("should fail for invalid YAML", () => {
+    const yamlInput = "invalid: yaml: structure:";
+    myModule.parseLabelMap(yamlInput);
+    expect(setFailed).toHaveBeenCalledWith(
+      "Invalid label_map input. Unable to parse YAML."
+    );
+  });
+
+  it("should fail for array instead of object", () => {
+    const yamlInput = "- item1\n- item2";
+    myModule.parseLabelMap(yamlInput);
+    expect(setFailed).toHaveBeenCalledWith(
+      "Invalid label_map input. Expecting a YAML object with string keys and values."
+    );
+  });
+
+  it("should fail for non-string values", () => {
+    const yamlInput = "key: 123";
+    myModule.parseLabelMap(yamlInput);
+    expect(setFailed).toHaveBeenCalledWith(
+      "Invalid label_map input. Expecting a YAML object with string keys and values."
+    );
+  });
+});
+
+describe("applyLabel with label_map", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    context.repo = {
+      owner: "mockOwner",
+      repo: "mockRepo",
+    };
+  });
+
+  it("should fail when both custom_labels and label_map are provided", async () => {
+    getInput.mockImplementation((inputName) => {
+      if (inputName === "add_label") return "true";
+      if (inputName === "custom_labels") return '{"feat": "feature"}';
+      if (inputName === "label_map") return "feat: feature";
+      return undefined;
+    });
+
+    await myModule.applyLabel({}, {});
+
+    expect(setFailed).toHaveBeenCalledWith(
+      "Cannot use both custom_labels and label_map. Please use only one."
+    );
+  });
+
+  it("should use label_map when only label_map is provided", async () => {
+    const mockOctokit = {
+      rest: {
+        issues: {
+          listLabelsOnIssue: jest.fn().mockResolvedValue({
+            data: [],
+          }),
+          getLabel: jest.fn().mockResolvedValue({}),
+          addLabels: jest.fn().mockResolvedValue({}),
+        },
+      },
+    };
+    getInput.mockImplementation((inputName) => {
+      if (inputName === "add_label") return "true";
+      if (inputName === "custom_labels") return "";
+      if (inputName === "label_map") return "feat: feature\nfix: bugfix";
+      if (inputName === "task_types") return JSON.stringify(["feat", "fix"]);
+      if (inputName === "token") return "token";
+      return undefined;
+    });
+    getOctokit.mockReturnValue(mockOctokit);
+
+    const pr = { number: 123 };
+    const commitDetail = { type: "feat", breaking: false };
+
+    await myModule.applyLabel(pr, commitDetail);
+
+    expect(mockOctokit.rest.issues.addLabels).toHaveBeenCalledWith({
+      owner: "mockOwner",
+      repo: "mockRepo",
+      issue_number: 123,
+      labels: ["feature"],
+    });
+  });
+
+  it("should use custom_labels when only custom_labels is provided", async () => {
+    const mockOctokit = {
+      rest: {
+        issues: {
+          listLabelsOnIssue: jest.fn().mockResolvedValue({
+            data: [],
+          }),
+          getLabel: jest.fn().mockResolvedValue({}),
+          addLabels: jest.fn().mockResolvedValue({}),
+        },
+      },
+    };
+    getInput.mockImplementation((inputName) => {
+      if (inputName === "add_label") return "true";
+      if (inputName === "custom_labels") return '{"feat": "feature"}';
+      if (inputName === "label_map") return "";
+      if (inputName === "task_types") return JSON.stringify(["feat", "fix"]);
+      if (inputName === "token") return "token";
+      return undefined;
+    });
+    getOctokit.mockReturnValue(mockOctokit);
+
+    const pr = { number: 123 };
+    const commitDetail = { type: "feat", breaking: false };
+
+    await myModule.applyLabel(pr, commitDetail);
+
+    expect(mockOctokit.rest.issues.addLabels).toHaveBeenCalledWith({
+      owner: "mockOwner",
+      repo: "mockRepo",
+      issue_number: 123,
+      labels: ["feature"],
+    });
+  });
+});
+
 describe("applyScopeLabel", () => {
   beforeEach(() => {
     jest.resetAllMocks();
