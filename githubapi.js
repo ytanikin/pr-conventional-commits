@@ -48,6 +48,32 @@ async function createOrAddLabel(octokit, label, pr) {
     });
 }
 
+async function labelExists(octokit, label) {
+    try {
+        await octokit.rest.issues.getLabel({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            name: label
+        });
+        return true;
+    } catch (err) {
+        return false;
+    }
+}
+
+async function addLabelIfExists(octokit, label, pr) {
+    const exists = await labelExists(octokit, label);
+    if (exists) {
+        await octokit.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: pr.number,
+            labels: [label],
+        });
+    }
+    return exists;
+}
+
 async function getCurrentLabels(octokit, pr) {
     const currentLabelsResult = await octokit.rest.issues.listLabelsOnIssue({
         owner: context.repo.owner,
@@ -62,5 +88,7 @@ module.exports = {
     removeLabel,
     createLabel,
     createOrAddLabel,
-    getCurrentLabels
+    getCurrentLabels,
+    labelExists,
+    addLabelIfExists
 };

@@ -1,6 +1,7 @@
 const { getInput, setFailed } = require('@actions/core');
 const { getOctokit, context } = require('@actions/github');
 const parser = require('conventional-commits-parser')
+const yaml = require('js-yaml');
 const githubApi = require('./githubapi');
 
 /**
@@ -197,19 +198,57 @@ function extractConventionalCommitData(title) {
     return cc;
 }
 
+function parseScopeLabelMap(scopeLabelMapInput) {
+    if (!scopeLabelMapInput) {
+        return {};
+    }
+
+    try {
+        const scopeLabelMap = yaml.load(scopeLabelMapInput);
+        // Validate that scopeLabelMap is an object with string keys and values
+        if (typeof scopeLabelMap !== 'object' || Array.isArray(scopeLabelMap) || scopeLabelMap === null ||
+            Object.entries(scopeLabelMap).some(([k, v]) => typeof k !== 'string' || typeof v !== 'string')) {
+            setFailed('Invalid add_scope_label_map input. Expecting a YAML object with string keys and values.');
+            return null;
+        }
+        return scopeLabelMap;
+    } catch (err) {
+        setFailed('Invalid add_scope_label_map input. Unable to parse YAML.');
+        return null;
+    }
+}
+
 async function applyScopeLabel(pr, commitDetail) {
     const addLabelEnabled = getInput('add_scope_label');
-    scopeName = commitDetail.scope;
+    const scopeName = commitDetail.scope;
     if (addLabelEnabled !== undefined && addLabelEnabled.toLowerCase() === 'false' || scopeName === undefined || scopeName === "") {
         return;
     }
+
+    // Parse scope label map
+    const scopeLabelMapInput = getInput('add_scope_label_map');
+    const scopeLabelMap = parseScopeLabelMap(scopeLabelMapInput);
+    if (scopeLabelMap === null) {
+        return;
+    }
+
+    // Determine the label to apply (mapped or original scope)
+    const labelToApply = scopeLabelMap[scopeName] !== undefined ? scopeLabelMap[scopeName] : scopeName;
+
     const octokit = getOctokit(getInput('token'));
     const currentLabelsResult = await githubApi.getCurrentLabelsResult(octokit, pr);
     const currentLabels = currentLabelsResult.data.map(label => label.name);
-    if (currentLabels.includes(scopeName)) {
+    if (currentLabels.includes(labelToApply)) {
         return;
     }
-    githubApi.createOrAddLabel(octokit, scopeName, pr)
+
+    // Check if we should only use existing labels
+    const onlyExisting = getInput('add_scope_label_only_existing');
+    if (onlyExisting !== undefined && onlyExisting.toLowerCase() === 'true') {
+        await githubApi.addLabelIfExists(octokit, labelToApply, pr);
+    } else {
+        await githubApi.createOrAddLabel(octokit, labelToApply, pr);
+    }
 }
 
 /**
@@ -256,5 +295,7 @@ module.exports = {
     checkScope,
     checkTicketNumber,
     applyLabel,
-    updateLabels
+    updateLabels,
+    applyScopeLabel,
+    parseScopeLabelMap
 };
