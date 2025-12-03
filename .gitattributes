@@ -1,0 +1,3 @@
+# Prevent line ending issues between platforms:
+# Normalize text files (JS/TS/JSON/etc.) to LF in the repo, keep OS defaults in working copies
+* text=auto

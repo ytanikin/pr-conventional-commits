@@ -183,19 +183,19 @@ function getScopeTypes() {
 }
 
 /**
- * Check the ticket number based on the PR title and a provided regex.
+ * Check the ticket number based on the PR title against the provided regex.
  */
 async function checkTicketNumber() {
     const ticketKeyRegex = getInput('ticket_key_regex');
     if (ticketKeyRegex) {
         const pr = context.payload.pull_request;
-        const taskNumberMatch = pr.title.match(new RegExp(ticketKeyRegex));
-        const taskNumber = taskNumberMatch ? taskNumberMatch[0] : '';
-        if (!taskNumber) {
-            setFailed(`Invalid or missing task number: '${taskNumber}'. Must match: ${ticketKeyRegex}`);
+        const ticketMatches = pr.title.match(new RegExp(ticketKeyRegex));
+        if (!ticketMatches) {
+            setFailed(`Invalid or missing task.\nActual title: "${pr.title}"\nMust match regex: "${ticketKeyRegex}"`);
         }
     }
 }
+
 /**
  * Apply labels to the pull request based on the details of the commit and any custom labels provided.
  * @param {Object} pr The pull request object.

@@ -162,7 +162,7 @@ jobs:
         uses:  ytanikin/pr-conventional-commits@1.4.0
         with:
          task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
-         ticket_key_regex: '^PROJECT-\\d{2,5}$'
+         ticket_key_regex: 'PROJECT-\\d{2,5}'
          custom_labels: '{"feat": "feature", "fix": "fix", "docs": "documentation", "test": "test", "ci": "CI/CD", "refactor": "refactor", "perf": "performance", "chore": "chore", "revert": "revert", "wip": "WIP"}'
          add_scope_label: 'true'
 ```

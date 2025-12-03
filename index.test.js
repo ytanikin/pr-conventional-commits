@@ -75,7 +75,7 @@ describe('checkTicketNumber', () => {
             pull_request: { title: 'no number here' }
         };
         await myModule.checkTicketNumber();
-        expect(setFailed).toHaveBeenCalledWith('Invalid or missing task number: \'\'. Must match: \\d+');
+        expect(setFailed).toHaveBeenCalledWith('Invalid or missing task.\nActual title: "no number here"\nMust match regex: "\\d+"');
     });
 });
 
