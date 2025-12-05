@@ -9,7 +9,10 @@ inputs:
     description: 'An array of valid scope types. If omitted, any scope is allowed. If given, include the empty scope with "". Example: ["login","signup","checkout","payment", ""]'
     required: false
   ticket_key_regex:
-    description: 'Regular expression to match issue number in PR title, by default does not validate. Example ^PROJECT-\d{2,5}$'
+    description: '(optional) Regular expression for custom title validation; disabled by default. Example: ''PROJECT-\d{2,5}$'' for trailing issue ticket, ''"^[^:]+: [A-Z]"''  for capitalized title'
+    required: false
+  title_key_regex:
+    description: '(optional) Regular expression for custom title validation; disabled by default. Example: ''PROJECT-\d{2,5}$'' for trailing issue ticket, ''"^[^:]+: [A-Z]"''  for capitalized title'
     required: false
   add_label:
     description: 'Whether to add labels'

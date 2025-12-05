@@ -4,7 +4,7 @@
 
 - Conventional Commit Validation: Checks that the PR title adheres to the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification.
 - Automatic Labeling: Labels the PR based on the task type mentioned in the title. Can be disabled.
-- Ticket Number Validation: Optionally checks the provided ticket number format using regular expressions.
+- Title Pattern Validation: Optionally validates PR titles against custom regex (issue tickets, title formats, etc.).
 
 ## Overview
 
@@ -25,7 +25,7 @@ This GitHub Action checks that the PR title adheres to the [Conventional Commits
 ### Inputs
 
 - `task_types` (required): An array of task types. Example: `["feat","fix","docs","test","ci","refactor","perf","chore","revert"]`.
-- `ticket_key_regex` (optional): Regular expression to match issue number in PR title. Default is not validating. Example: `"^PROJECT-\\d{2,5}$"`.
+- `title_key_regex` (optional) Regular expression for custom title validation; disabled by default. Example: ''PROJECT-\d{2,5}$'' for trailing issue ticket, ''"^[^:]+: [A-Z]"''  for capitalized title.
 - `add_label` (optional): Whether to add labels. Default is `'true'`.
 - `custom_labels` (optional): A JSON string mapping task types to custom label names. Example: `{"feat": "feature", "fix": "fix", "docs": "documentation", "test": "test", "ci": "CI/CD", "refactor": "refactor", "perf": "performance", "chore": "chore", "revert": "revert", "wip": "WIP"}`.
 
@@ -63,9 +63,9 @@ Note: Make sure that at least one merge option is enabled (merge commits, squash
 
 ## Examples
 
-### Basic Usage, no label, no ticket numbers validation
+### Basic Usage, no label, no title validation
 
-This configuration checks for conventional commits using the specified `task_types` but doesn't add any labels or validate ticket numbers.
+This configuration checks for conventional commits using the specified `task_types` but doesn't add any labels or validate title patterns.
 
 Add a step that uses this action in your workflow file:
 
@@ -89,9 +89,9 @@ jobs:
 
 For this configuration, the following PR title is valid: `feat: add new feature`
 
-### Usage, with ticket numbers validation, no labeling
+### Usage, with title validation, no labeling
 
-This configuration checks for conventional commits using the specified `task_types` and validates ticket numbers, but doesn't add any labels.
+This configuration checks for conventional commits using the specified `task_types` and validates title patterns, but doesn't add any labels.
 
 Add a step that uses this action in your workflow file:
 
@@ -141,9 +141,9 @@ jobs:
 
 For this configuration, the following PR title is valid: `feat: add new feature`. **The PR will be labeled as** `feat`.
 
-## Example Usage with ticket number validation, custom labeling and scope labeling
+## Example Usage with title validation, custom labeling and scope labeling
 
-This configuration checks for conventional commits are using the specified `task_types`, validates ticket numbers, and adds custom labels.
+This configuration checks for conventional commits using the specified `task_types`, validates title patterns, and adds custom labels.
 
 Add a step that uses this action in your workflow file:
 
