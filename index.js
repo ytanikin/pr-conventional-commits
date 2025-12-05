@@ -9,7 +9,7 @@ const githubApi = require('./githubapi');
 async function run() {
 
     const pr = context.payload.pull_request;
-    const titleRegex = getInput('ticket_key_regex');
+    const titleRegex = getTitleRegex();
 
     const commitDetail = await checkConventionalCommits();
     await checkScope(commitDetail);
@@ -104,6 +104,16 @@ function getScopeTypes() {
         setFailed('Invalid scope_types input. Expecting a JSON array.');
         return null;
     }
+}
+
+// TODO Remove this function once `ticket_key_regex` is phased out
+function getTitleRegex() {
+    const titleRegex = getInput('title_regex');
+    const deprecatedTitleRegex = getInput('ticket_key_regex');
+    if (deprecatedTitleRegex) {
+        console.warn('⚠️  DEPRECATION WARNING: "ticket_key_regex" parameter is deprecated. Please use "title_regex" instead.');
+    }
+    return titleRegex || deprecatedTitleRegex || null;
 }
 
 /**

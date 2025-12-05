@@ -25,7 +25,7 @@ This GitHub Action checks that the PR title adheres to the [Conventional Commits
 ### Inputs
 
 - `task_types` (required): An array of task types. Example: `["feat","fix","docs","test","ci","refactor","perf","chore","revert"]`.
-- `title_key_regex` (optional) Regular expression for custom title validation; disabled by default. Example: ''PROJECT-\d{2,5}$'' for trailing issue ticket, ''"^[^:]+: [A-Z]"''  for capitalized title.
+- `title_regex` (optional): Regular expression for custom title validation; disabled by default. Example: `''PROJECT-\d{2,5}$''` for trailing issue ticket; `''^[^:]+: [A-Z]''`  for capitalized title.
 - `add_label` (optional): Whether to add labels. Default is `'true'`.
 - `custom_labels` (optional): A JSON string mapping task types to custom label names. Example: `{"feat": "feature", "fix": "fix", "docs": "documentation", "test": "test", "ci": "CI/CD", "refactor": "refactor", "perf": "performance", "chore": "chore", "revert": "revert", "wip": "WIP"}`.
 
@@ -111,7 +111,7 @@ jobs:
         with:
          task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
          add_label: 'false'
-         ticket_key_regex: 'PROJECT-\d{2,5}'
+         title_regex: 'PROJECT-\d{2,5}'
 ```
 
 For this configuration, the following PR title is valid: `feat: PROJECT-12345 add new feature`
@@ -162,7 +162,7 @@ jobs:
         uses:  ytanikin/pr-conventional-commits@1.4.0
         with:
          task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
-         ticket_key_regex: 'PROJECT-\\d{2,5}'
+         title_regex: 'PROJECT-\\d{2,5}'
          custom_labels: '{"feat": "feature", "fix": "fix", "docs": "documentation", "test": "test", "ci": "CI/CD", "refactor": "refactor", "perf": "performance", "chore": "chore", "revert": "revert", "wip": "WIP"}'
          add_scope_label: 'true'
 ```
