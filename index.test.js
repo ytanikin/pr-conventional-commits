@@ -68,14 +68,17 @@ describe('checkConventionalCommits', () => {
     });
 });
 
-describe('checkTicketNumber', () => {
-    it('should fail when ticket number is missing or invalid', async () => {
-        getInput.mockReturnValue('\\d+');
-        context.payload = {
-            pull_request: { title: 'no number here' }
-        };
-        await myModule.checkTicketNumber();
-        expect(setFailed).toHaveBeenCalledWith('Invalid or missing task.\nActual title: "no number here"\nMust match regex: "\\d+"');
+describe('validateTextMatches', () => {
+    it('should fail when text does not match the specified regex pattern', async () => {
+        // Given
+        const numberRegex = '\\d+';
+        const text = 'no number here';
+        // When
+        await myModule.checkTextMatches(numberRegex, text);
+        // Then
+        expect(setFailed).toHaveBeenCalledWith(`The text is not compliant with the specified regex...
+  🢒 Actual text: "${text}"
+  🢒 Must match: "${numberRegex}"`);
     });
 });
 
@@ -168,7 +171,7 @@ describe('generateColor', () => {
         const color2 = utils.generateColor('test2');
         expect(color1).not.toEqual(color2);
     });
-    
+
     it('should generate the same colors for different inputs', () => {
         const color1 = utils.generateColor('test1');
         const color2 = utils.generateColor('test1');
@@ -195,36 +198,36 @@ describe('checkScope', () => {
     it('should return early if scope_types input is not provided', async () => {
         getInput.mockReturnValue('');
         const commitDetail = { type: 'feat', scope: 'login', breaking: false };
-        
+
         await myModule.checkScope(commitDetail);
-        
+
         expect(setFailed).not.toHaveBeenCalled();
     });
 
     it('should succeed when scope is valid', async () => {
         getInput.mockReturnValue(JSON.stringify(['login', 'signup', 'checkout']));
         const commitDetail = { type: 'feat', scope: 'login', breaking: false };
-        
+
         await myModule.checkScope(commitDetail);
-        
+
         expect(setFailed).not.toHaveBeenCalled();
     });
 
     it('should succeed when empty scope is allowed and scope is empty', async () => {
         getInput.mockReturnValue(JSON.stringify(['login', 'signup', '']));
         const commitDetail = { type: 'feat', scope: '', breaking: false };
-        
+
         await myModule.checkScope(commitDetail);
-        
+
         expect(setFailed).not.toHaveBeenCalled();
     });
 
     it('should fail when scope is invalid', async () => {
         getInput.mockReturnValue(JSON.stringify(['login', 'signup', 'checkout']));
         const commitDetail = { type: 'feat', scope: 'invalid', breaking: false };
-        
+
         await myModule.checkScope(commitDetail);
-        
+
         expect(setFailed).toHaveBeenCalledWith(
             "Invalid or missing scope: 'invalid'. Must be one of: login, signup, checkout"
         );
@@ -233,9 +236,9 @@ describe('checkScope', () => {
     it('should fail when scope is empty but not allowed', async () => {
         getInput.mockReturnValue(JSON.stringify(['login', 'signup', 'checkout']));
         const commitDetail = { type: 'feat', scope: '', breaking: false };
-        
+
         await myModule.checkScope(commitDetail);
-        
+
         expect(setFailed).toHaveBeenCalledWith(
             "Invalid or missing scope: ''. Must be one of: login, signup, checkout"
         );
@@ -244,18 +247,18 @@ describe('checkScope', () => {
     it('should fail when scope_types input is invalid JSON', async () => {
         getInput.mockReturnValue('invalid JSON');
         const commitDetail = { type: 'feat', scope: 'login', breaking: false };
-        
+
         await myModule.checkScope(commitDetail);
-        
+
         expect(setFailed).toHaveBeenCalledWith('Invalid scope_types input. Expecting a JSON array.');
     });
 
     it('should fail when scope_types input is not an array', async () => {
         getInput.mockReturnValue('{"login": "value"}');
         const commitDetail = { type: 'feat', scope: 'login', breaking: false };
-        
+
         await myModule.checkScope(commitDetail);
-        
+
         expect(setFailed).toHaveBeenCalledWith('Invalid scope_types input. Expecting a JSON array.');
     });
 });
@@ -268,27 +271,27 @@ describe('getScopeTypes (via checkScope)', () => {
     it('should handle when scope_types input is not provided', async () => {
         getInput.mockReturnValue('');
         const commitDetail = { type: 'feat', scope: 'login', breaking: false };
-        
+
         await myModule.checkScope(commitDetail);
-        
+
         expect(setFailed).not.toHaveBeenCalled();
     });
 
     it('should handle valid JSON array scope_types', async () => {
         getInput.mockReturnValue(JSON.stringify(['login', 'signup', 'checkout']));
         const commitDetail = { type: 'feat', scope: 'login', breaking: false };
-        
+
         await myModule.checkScope(commitDetail);
-        
+
         expect(setFailed).not.toHaveBeenCalled();
     });
 
     it('should handle empty array scope_types', async () => {
         getInput.mockReturnValue(JSON.stringify([]));
         const commitDetail = { type: 'feat', scope: 'login', breaking: false };
-        
+
         await myModule.checkScope(commitDetail);
-        
+
         expect(setFailed).toHaveBeenCalledWith(
             "Invalid or missing scope: 'login'. Must be one of: "
         );
@@ -297,27 +300,27 @@ describe('getScopeTypes (via checkScope)', () => {
     it('should handle array with empty string scope', async () => {
         getInput.mockReturnValue(JSON.stringify(['login', 'signup', '']));
         const commitDetail = { type: 'feat', scope: '', breaking: false };
-        
+
         await myModule.checkScope(commitDetail);
-        
+
         expect(setFailed).not.toHaveBeenCalled();
     });
 
     it('should fail when JSON is invalid', async () => {
         getInput.mockReturnValue('invalid JSON');
         const commitDetail = { type: 'feat', scope: 'login', breaking: false };
-        
+
         await myModule.checkScope(commitDetail);
-        
+
         expect(setFailed).toHaveBeenCalledWith('Invalid scope_types input. Expecting a JSON array.');
     });
 
     it('should fail when JSON is not an array', async () => {
         getInput.mockReturnValue(JSON.stringify({ login: 'value' }));
         const commitDetail = { type: 'feat', scope: 'login', breaking: false };
-        
+
         await myModule.checkScope(commitDetail);
-        
+
         expect(setFailed).toHaveBeenCalledWith('Invalid scope_types input. Expecting a JSON array.');
     });
 });
