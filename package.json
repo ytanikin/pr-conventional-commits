@@ -6,7 +6,7 @@
   "homepage": "https://github.com/ytanikin/PRConventionalCommits.git",
   "dependencies": {
     "@actions/core": "^1.10.0",
-    "@actions/github": "^5.1.1",
+    "@actions/github": "^6.0.1",
     "conventional-commits-parser": "^3.2.4"
   },
   "devDependencies": {
